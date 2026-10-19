@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="Southcolours.API/Southcolours.API.csproj" />
+  <Project Path="Southcolours.Application/Southcolours.Application.csproj" />
+  <Project Path="Southcolours.Domain/Southcolours.Domain.csproj" />
+  <Project Path="Southcolours.Infrastructure/Southcolours.Infrastructure.csproj" />
+  <Project Path="Southcolours.Persistence/Southcolours.Persistence.csproj" />
+  <Project Path="Southcolours.Tests/Southcolours.Tests.csproj" />
+</Solution>

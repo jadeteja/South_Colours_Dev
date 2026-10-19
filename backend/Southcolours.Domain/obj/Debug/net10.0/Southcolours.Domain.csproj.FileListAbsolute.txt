@@ -1,0 +1,11 @@
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\bin\Debug\net10.0\Southcolours.Domain.deps.json
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\bin\Debug\net10.0\Southcolours.Domain.dll
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\bin\Debug\net10.0\Southcolours.Domain.pdb
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\obj\Debug\net10.0\Southcolours.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\obj\Debug\net10.0\Southcolours.Domain.AssemblyInfoInputs.cache
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\obj\Debug\net10.0\Southcolours.Domain.AssemblyInfo.cs
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\obj\Debug\net10.0\Southcolours.Domain.csproj.CoreCompileInputs.cache
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\obj\Debug\net10.0\Southcolours.Domain.dll
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\obj\Debug\net10.0\refint\Southcolours.Domain.dll
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\obj\Debug\net10.0\Southcolours.Domain.pdb
+C:\Users\jadet\Documents\code\SouthColors_Dev\backend\Southcolours.Domain\obj\Debug\net10.0\ref\Southcolours.Domain.dll

@@ -1,0 +1,115 @@
+/* South Colours Brand Theme Tokens & Design System */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap');
+
+:root {
+  --primary-pink: #FF4081;
+  --primary-pink-hover: #E91E63;
+  --primary-pink-light: #FFF0F5;
+  --primary-pink-blush: #FFD6E7;
+  --dark-navy: #18263B;
+  --text-dark: #18263B;
+  --text-muted: #666666;
+  --text-light: #8E9AA8;
+  --border-pink: #F3DCE5;
+  --bg-page: #FFF9FB;
+  --bg-card: #FFFFFF;
+  --star-gold: #FFB300;
+  --success-green: #28A745;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  --shadow-soft: 0 4px 20px rgba(255, 64, 129, 0.08);
+  --shadow-hover: 0 10px 25px rgba(255, 64, 129, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-dark);
+  background-color: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .brand-font {
+  font-family: 'Nunito', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+/* Common UI Utilities matching the reference image */
+.btn-primary {
+  background: linear-gradient(135deg, #FF4081 0%, #F50057 100%);
+  color: #FFFFFF;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  padding: 10px 24px;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(255, 64, 129, 0.35);
+  &:hover {
+    background: linear-gradient(135deg, #F50057 0%, #D81B60 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 64, 129, 0.45);
+  }
+}
+
+.btn-secondary {
+  background-color: #FFFFFF;
+  color: var(--primary-pink);
+  border: 1.5px solid var(--primary-pink);
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  padding: 10px 22px;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  &:hover {
+    background-color: var(--primary-pink-light);
+  }
+}
+
+.badge-discount {
+  background-color: var(--primary-pink-blush);
+  color: var(--primary-pink);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+.card-product {
+  background: #FFFFFF;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-pink);
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  position: relative;
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+  }
+}

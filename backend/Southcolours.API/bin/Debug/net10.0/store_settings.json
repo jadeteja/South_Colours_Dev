@@ -1,0 +1,12 @@
+{
+  "StoreName": "South Colours",
+  "Tagline": "Little Styles, Big Smiles",
+  "OperatingCurrency": "INR (\u20B9)",
+  "DefaultGstRate": "5.0%",
+  "RazorpayKey": "rzp_test_Tplnc0eTN5xGQt",
+  "RazorpaySecret": "Sxmrg4J0p52g2JOb9iGp3S9P",
+  "FreeShippingMin": 999,
+  "StandardDeliveryFee": 99,
+  "AuditLogging": true,
+  "RequireLoginForCheckout": false
+}

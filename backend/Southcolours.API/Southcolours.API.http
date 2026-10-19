@@ -1,0 +1,6 @@
+@Southcolours.API_HostAddress = http://localhost:5094
+
+GET {{Southcolours.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
