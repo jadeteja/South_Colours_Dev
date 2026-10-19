@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ShopService } from '../../core/services/shop.service';
+import { Product } from '../../core/models/ecommerce.models';
 
 @Component({
   selector: 'app-header',
@@ -30,15 +31,20 @@ import { ShopService } from '../../core/services/shop.service';
             </div>
           </a>
 
-          <!-- Search Bar -->
-          <div class="search-container">
+          <!-- Search Bar with Suggestions & Recent Searches -->
+          <div class="search-container" (click)="$event.stopPropagation()">
             <div class="search-bar">
               <input 
                 type="text" 
                 placeholder="Search for dresses, ethnic wear, sets..." 
                 [(ngModel)]="searchQuery" 
+                (input)="onSearchInput()"
+                (focus)="isSearchFocused = true"
                 (keyup.enter)="onSearch()"
               />
+              @if (searchQuery.trim()) {
+                <button class="clear-btn" (click)="clearSearch()">✕</button>
+              }
               <button class="search-btn" (click)="onSearch()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <circle cx="11" cy="11" r="8"></circle>
@@ -46,6 +52,52 @@ import { ShopService } from '../../core/services/shop.service';
                 </svg>
               </button>
             </div>
+
+            <!-- Suggestions & Recent Searches Dropdown -->
+            @if (isSearchFocused && (suggestions.length > 0 || (searchQuery.trim().length === 0 && recentSearches.length > 0))) {
+              <div class="search-dropdown">
+                <!-- Live Suggestions (2+ characters typed) -->
+                @if (searchQuery.trim().length >= 2 && suggestions.length > 0) {
+                  <div class="dropdown-section">
+                    <div class="section-title">SUGGESTIONS</div>
+                    @for (item of suggestions; track item.id) {
+                      <div class="suggestion-item" (click)="selectSuggestion(item)">
+                        <div class="suggestion-thumb">
+                          <img [src]="item.images && item.images.length ? item.images[0].imageUrl : 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=100&q=80'" [alt]="item.name" />
+                        </div>
+                        <div class="suggestion-info">
+                          <span class="suggestion-name" [innerHTML]="highlightMatch(item.name)"></span>
+                          <span class="suggestion-category">{{ item.category?.name || 'Ethnic Wear' }}</span>
+                        </div>
+                        <span class="suggestion-price">₹{{ item.sellingPrice | number }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Recent Searches (shown when search box is focused and empty or no query) -->
+                @if (searchQuery.trim().length === 0 && recentSearches.length > 0) {
+                  <div class="dropdown-section">
+                    <div class="section-header-row">
+                      <span class="section-title">RECENT SEARCHES</span>
+                      <button class="btn-clear-all" (click)="clearAllRecent()">Clear All</button>
+                    </div>
+                    @for (term of recentSearches; track term) {
+                      <div class="recent-item" (click)="selectRecent(term)">
+                        <div class="recent-left">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                          </svg>
+                          <span>{{ term }}</span>
+                        </div>
+                        <button class="btn-remove-term" (click)="removeRecent($event, term)">✕</button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
           </div>
 
           <!-- Action Icons -->
@@ -159,6 +211,20 @@ import { ShopService } from '../../core/services/shop.service';
           background-color: #FFFFFF;
         }
       }
+      .clear-btn {
+        position: absolute;
+        right: 42px;
+        background: transparent;
+        border: none;
+        color: #94A3B8;
+        cursor: pointer;
+        font-size: 13px;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        &:hover { color: #475569; }
+      }
       .search-btn {
         position: absolute;
         right: 14px;
@@ -169,6 +235,124 @@ import { ShopService } from '../../core/services/shop.service';
         &:hover {
           color: var(--primary-pink);
         }
+      }
+    }
+    .search-container {
+      position: relative;
+    }
+    .search-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: #FFFFFF;
+      border: 1px solid var(--border-pink);
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(255, 64, 129, 0.12), 0 4px 10px rgba(0, 0, 0, 0.04);
+      z-index: 1100;
+      overflow: hidden;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+    .dropdown-section {
+      padding: 10px 0;
+    }
+    .section-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 16px 8px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #94A3B8;
+      letter-spacing: 0.8px;
+      padding: 4px 16px 8px;
+    }
+    .section-header-row .section-title {
+      padding: 0;
+    }
+    .btn-clear-all {
+      background: none;
+      border: none;
+      color: var(--primary-pink);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 2px 4px;
+      &:hover { text-decoration: underline; }
+    }
+    .recent-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+      &:hover {
+        background: #FFF5F8;
+      }
+      .recent-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: var(--dark-navy);
+      }
+      .btn-remove-term {
+        background: none;
+        border: none;
+        color: #CBD5E1;
+        cursor: pointer;
+        padding: 4px;
+        font-size: 12px;
+        &:hover { color: #EF4444; }
+      }
+    }
+    .suggestion-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+      &:hover {
+        background: #FFF5F8;
+      }
+      .suggestion-thumb {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #F1F5F9;
+        flex-shrink: 0;
+        img { width: 100%; height: 100%; object-fit: cover; }
+      }
+      .suggestion-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+      .suggestion-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--dark-navy);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .suggestion-category {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .suggestion-price {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--primary-pink);
+        flex-shrink: 0;
       }
     }
     .header-actions {
@@ -243,14 +427,117 @@ import { ShopService } from '../../core/services/shop.service';
     }
   `]
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   shopService = inject(ShopService);
+  router = inject(Router);
+
   searchQuery = '';
+  isSearchFocused = false;
+  suggestions: Product[] = [];
+  recentSearches: string[] = [];
+
+  private searchDebounceTimer: any;
+
+  ngOnInit() {
+    this.loadRecentSearches();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick() {
+    this.isSearchFocused = false;
+  }
+
+  loadRecentSearches() {
+    try {
+      const stored = localStorage.getItem('southcolours_recent_searches');
+      if (stored) {
+        this.recentSearches = JSON.parse(stored);
+      } else {
+        this.recentSearches = ['Lehenga', 'Anarkali', 'Kurta Set', 'Pattu Dress'];
+      }
+    } catch {
+      this.recentSearches = ['Lehenga', 'Anarkali', 'Kurta Set'];
+    }
+  }
+
+  saveRecentSearch(term: string) {
+    const clean = term.trim();
+    if (!clean) return;
+    this.recentSearches = [clean, ...this.recentSearches.filter(t => t.toLowerCase() !== clean.toLowerCase())].slice(0, 6);
+    try {
+      localStorage.setItem('southcolours_recent_searches', JSON.stringify(this.recentSearches));
+    } catch {}
+  }
+
+  removeRecent(event: MouseEvent, term: string) {
+    event.stopPropagation();
+    this.recentSearches = this.recentSearches.filter(t => t !== term);
+    try {
+      localStorage.setItem('southcolours_recent_searches', JSON.stringify(this.recentSearches));
+    } catch {}
+  }
+
+  clearAllRecent() {
+    this.recentSearches = [];
+    try {
+      localStorage.removeItem('southcolours_recent_searches');
+    } catch {}
+  }
+
+  onSearchInput() {
+    clearTimeout(this.searchDebounceTimer);
+    const query = this.searchQuery.trim();
+
+    if (query.length < 2) {
+      this.suggestions = [];
+      return;
+    }
+
+    this.searchDebounceTimer = setTimeout(() => {
+      this.shopService.getProducts({ search: query, pageSize: 6 }).subscribe({
+        next: (res) => {
+          this.suggestions = res.items || [];
+        },
+        error: () => {
+          this.suggestions = [];
+        }
+      });
+    }, 200);
+  }
+
+  clearSearch() {
+    this.searchQuery = '';
+    this.suggestions = [];
+  }
+
+  selectSuggestion(product: Product) {
+    this.saveRecentSearch(product.name);
+    this.isSearchFocused = false;
+    this.router.navigate(['/products', product.slug]);
+  }
+
+  selectRecent(term: string) {
+    this.searchQuery = term;
+    this.onSearch();
+  }
 
   onSearch() {
-    if (this.searchQuery.trim()) {
-      window.location.href = `/products?search=${encodeURIComponent(this.searchQuery)}`;
+    const q = this.searchQuery.trim();
+    if (q) {
+      this.saveRecentSearch(q);
+      this.isSearchFocused = false;
+      this.router.navigate(['/products'], { queryParams: { search: q } });
     }
+  }
+
+  highlightMatch(text: string): string {
+    if (!this.searchQuery.trim()) return text;
+    const regex = new RegExp(`(${this.escapeRegex(this.searchQuery.trim())})`, 'gi');
+    return text.replace(regex, '<strong style="color: var(--primary-pink);">$1</strong>');
+  }
+
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }
 
