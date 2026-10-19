@@ -152,19 +152,33 @@ export class AdminEditProductComponent implements OnInit {
   }
 
   loadProduct() {
-    this.shopService.getProducts({ pageSize: 100 }).subscribe({
-      next: (res) => {
-        const found = res.items.find(p => p.id === this.productId);
+    this.shopService.getProductById(this.productId).subscribe({
+      next: (found) => {
         if (found) {
           this.product = found;
           this.editData.name = found.name;
           this.editData.description = found.shortDescription;
           this.editData.price = found.originalPrice;
           this.editData.discountPrice = found.sellingPrice;
-          this.editData.imageUrls = found.images.map(img => img.imageUrl);
+          this.editData.imageUrls = (found.images || []).map(img => img.imageUrl);
         }
       },
-      error: () => {}
+      error: () => {
+        // Fallback to getProducts list if single product endpoint fails
+        this.shopService.getProducts({ pageSize: 100 }).subscribe({
+          next: (res) => {
+            const found = res.items.find(p => p.id === this.productId);
+            if (found) {
+              this.product = found;
+              this.editData.name = found.name;
+              this.editData.description = found.shortDescription;
+              this.editData.price = found.originalPrice;
+              this.editData.discountPrice = found.sellingPrice;
+              this.editData.imageUrls = (found.images || []).map(img => img.imageUrl);
+            }
+          }
+        });
+      }
     });
   }
 
@@ -210,7 +224,8 @@ export class AdminEditProductComponent implements OnInit {
       },
       error: (err) => {
         this.isSaving = false;
-        alert(err.error?.message || 'Error updating product');
+        const msg = err.error?.message || err.error?.title || (typeof err.error === 'string' ? err.error : null) || err.message || 'Error updating product';
+        alert(`Error updating product: ${msg}`);
       }
     });
   }

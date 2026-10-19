@@ -75,6 +75,10 @@ export class ShopService {
     return this.http.get<Product>(`${this.apiUrl}/products/slug/${slug}`);
   }
 
+  getProductById(id: string): Observable<Product> {
+    return this.http.get<Product>(`${this.apiUrl}/products/${id}`);
+  }
+
   createProduct(payload: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/products`, payload);
   }

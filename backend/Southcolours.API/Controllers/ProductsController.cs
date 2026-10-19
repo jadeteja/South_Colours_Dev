@@ -213,21 +213,46 @@ public class ProductsController : ControllerBase
         product.OriginalPrice = dto.Price;
         product.UpdatedAtUtc = DateTime.UtcNow;
 
-        if (dto.ImageUrls != null && dto.ImageUrls.Count > 0)
+        if (dto.ImageUrls != null)
         {
-            _db.ProductImages.RemoveRange(product.Images);
-            for (int i = 0; i < dto.ImageUrls.Count; i++)
+            var currentImgs = await _db.ProductImages
+                .Where(img => img.ProductId == product.Id)
+                .ToListAsync();
+
+            _db.ProductImages.RemoveRange(currentImgs);
+
+            foreach (var (url, idx) in dto.ImageUrls.Select((u, i) => (u, i)))
             {
                 product.Images.Add(new ProductImage
                 {
-                    ImageUrl = dto.ImageUrls[i],
-                    IsPrimary = i == 0,
-                    DisplayOrder = i + 1
+                    ProductId = product.Id,
+                    ImageUrl = url,
+                    IsPrimary = idx == 0,
+                    DisplayOrder = idx + 1
                 });
             }
         }
 
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // If the row was modified by an alternate process, reload and apply changes
+            foreach (var entry in _db.ChangeTracker.Entries())
+            {
+                await entry.ReloadAsync();
+            }
+            product.Name = dto.Name;
+            product.ShortDescription = dto.Description;
+            product.DetailedDescription = dto.Description;
+            product.SellingPrice = dto.DiscountPrice > 0 ? dto.DiscountPrice : dto.Price;
+            product.OriginalPrice = dto.Price;
+            product.UpdatedAtUtc = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
+
         return Ok(product);
     }
 
