@@ -95,7 +95,7 @@ public class CategoriesController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryRequest request)
     {
-        var category = await _db.Categories.Include(c => c.SubCategories).FirstOrDefaultAsync(c => c.Id == id);
+        var category = await _db.Categories.FirstOrDefaultAsync(c => c.Id == id);
         if (category == null) return NotFound(new { Message = "Category not found." });
 
         if (!string.IsNullOrWhiteSpace(request.Name))
@@ -115,7 +115,69 @@ public class CategoriesController : ControllerBase
         category.IsActive = request.IsActive;
         category.UpdatedAtUtc = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync();
+        if (request.SubCategories != null)
+        {
+            var requestedSubs = request.SubCategories
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var existingSubs = await _db.SubCategories
+                .IgnoreQueryFilters()
+                .Where(s => s.CategoryId == category.Id)
+                .ToListAsync();
+
+            // Deactivate or reactivate existing
+            foreach (var sub in existingSubs)
+            {
+                var keep = requestedSubs.Contains(sub.Name, StringComparer.OrdinalIgnoreCase);
+                sub.IsActive = keep;
+                sub.IsDeleted = !keep;
+                sub.UpdatedAtUtc = DateTime.UtcNow;
+            }
+
+            // Add new subcategories not present in existing
+            foreach (var subName in requestedSubs)
+            {
+                if (!existingSubs.Any(s => string.Equals(s.Name, subName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _db.SubCategories.Add(new SubCategory
+                    {
+                        CategoryId = category.Id,
+                        Name = subName,
+                        Slug = subName.ToLower().Replace(" ", "-").Replace("&", "and"),
+                        DisplayOrder = 1,
+                        IsActive = true,
+                        IsDeleted = false
+                    });
+                }
+            }
+        }
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            foreach (var entry in _db.ChangeTracker.Entries())
+            {
+                await entry.ReloadAsync();
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Name)) category.Name = request.Name.Trim();
+            if (!string.IsNullOrWhiteSpace(request.Slug)) category.Slug = request.Slug.ToLower().Trim();
+            if (request.Description != null) category.Description = request.Description;
+            if (request.ImageUrl != null) category.ImageUrl = request.ImageUrl;
+            category.DisplayOrder = request.DisplayOrder;
+            category.TargetGender = request.TargetGender;
+            category.IsActive = request.IsActive;
+            category.UpdatedAtUtc = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+        }
+
         return Ok(category);
     }
 
@@ -183,6 +245,7 @@ public class UpdateCategoryRequest
     public GenderCategory TargetGender { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
+    public List<string>? SubCategories { get; set; }
 }
 
 public class CreateSubCategoryRequest

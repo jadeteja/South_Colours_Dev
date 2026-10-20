@@ -88,6 +88,10 @@ export class ShopService {
     return this.http.post<any>(`${this.apiUrl}/categories`, payload);
   }
 
+  updateCategory(id: string, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/categories/${id}`, payload);
+  }
+
   deleteCategory(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/categories/${id}`);
   }

@@ -15,34 +15,50 @@ import { Product } from '../../core/models/ecommerce.models';
       <!-- Breadcrumb -->
       <nav class="breadcrumb">
         <a routerLink="/">Home</a> <span>›</span>
-        <a routerLink="/products" [queryParams]="{ category: 'girls' }">Girls</a> <span>›</span>
-        <span class="current">Ethnic Wear</span>
+        @if (currentCategoryName) {
+          <a [routerLink]="['/products']" [queryParams]="{ category: currentCategorySlug }">{{ currentCategoryName }}</a>
+        } @else {
+          <span>Products</span>
+        }
+        @if (currentSubCategoryName) {
+          <span>›</span>
+          <span class="current">{{ currentSubCategoryName }}</span>
+        }
       </nav>
 
       <div class="listing-layout">
         <!-- Left Sidebar Filters Matching Reference Screen 2 -->
         <aside class="sidebar-filters">
-          <!-- Categories Accordion / Tree -->
+          <!-- Categories Accordion / Tree (Dynamic from Backend) -->
           <div class="filter-card">
             <h3 class="filter-header">Categories</h3>
             <ul class="category-tree">
-              <li><a routerLink="/products" [queryParams]="{ category: 'girls' }">👧 Girls</a></li>
-              <li><a routerLink="/products" [queryParams]="{ category: 'boys' }">👦 Boys</a></li>
-              <li><a routerLink="/products" [queryParams]="{ category: 'baby-wear' }">👶 Baby Wear</a></li>
-              <li class="active-parent">
-                <a routerLink="/products" [queryParams]="{ category: 'ethnic-wear' }" routerLinkActive="active-category">🥻 Ethnic Wear</a>
-                <ul class="subcategories">
-                  <li><a routerLink="/products" [queryParams]="{ category: 'ethnic-wear', subcategory: 'lehenga-choli' }" routerLinkActive="active-sub">▸ Lehenga Choli</a></li>
-                  <li><a routerLink="/products" [queryParams]="{ category: 'ethnic-wear', subcategory: 'pavadai-sattai' }" routerLinkActive="active-sub">▸ Pavadai Sattai</a></li>
-                  <li><a routerLink="/products" [queryParams]="{ category: 'ethnic-wear', subcategory: 'anarkali' }" routerLinkActive="active-sub">▸ Anarkali</a></li>
-                  <li><a routerLink="/products" [queryParams]="{ category: 'ethnic-wear', subcategory: 'gown' }" routerLinkActive="active-sub">▸ Gown</a></li>
-                  <li><a routerLink="/products" [queryParams]="{ category: 'ethnic-wear', subcategory: 'kurta-sets' }" routerLinkActive="active-sub">▸ Kurta Sets</a></li>
-                </ul>
-              </li>
-              <li><a routerLink="/products" [queryParams]="{ category: 'dresses' }">👗 Dresses</a></li>
-              <li><a routerLink="/products" [queryParams]="{ category: 'tops' }">👚 Tops</a></li>
-              <li><a routerLink="/products" [queryParams]="{ category: 'bottoms' }">👖 Bottoms</a></li>
-              <li><a routerLink="/products" [queryParams]="{ category: 'winter-wear' }">🧥 Winter Wear</a></li>
+              @for (cat of categories; track cat.id) {
+                <li [class.active-parent]="currentCategorySlug === cat.slug">
+                  <a 
+                    [routerLink]="['/products']" 
+                    [queryParams]="{ category: cat.slug }"
+                    [class.active-category]="currentCategorySlug === cat.slug"
+                  >
+                    {{ getCategoryIcon(cat.slug) }} {{ cat.name }}
+                  </a>
+                  @if (cat.subCategories && cat.subCategories.length > 0 && currentCategorySlug.toLowerCase() === cat.slug.toLowerCase()) {
+                    <ul class="subcategories">
+                      @for (sub of cat.subCategories; track sub.id) {
+                        <li [class.active-sub]="isSubActive(sub.slug)">
+                          <a 
+                            [routerLink]="['/products']" 
+                            [queryParams]="{ category: cat.slug, subcategory: sub.slug }"
+                            [class.active-sub]="isSubActive(sub.slug)"
+                          >
+                            ▸ {{ sub.name }}
+                          </a>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </li>
+              }
             </ul>
           </div>
 
@@ -219,16 +235,33 @@ import { Product } from '../../core/models/ecommerce.models';
       }
       .subcategories {
         list-style: none;
-        padding-left: 20px;
-        margin-top: 6px;
+        padding-left: 14px;
+        margin-top: 8px;
+        margin-bottom: 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
         li {
           font-size: 13px;
-          color: var(--text-muted);
-          margin-bottom: 6px;
-          cursor: pointer;
-          &:hover, &.active-sub {
-            color: var(--primary-pink);
-            font-weight: 700;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+          a {
+            display: block;
+            padding: 4px 10px;
+            color: #64748B;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            &:hover {
+              color: var(--primary-pink);
+              background: #FFF0F5;
+            }
+            &.active-sub {
+              color: var(--primary-pink) !important;
+              font-weight: 700 !important;
+              background: #FFF0F5;
+              border-left: 3px solid var(--primary-pink);
+            }
           }
         }
       }
@@ -441,6 +474,7 @@ export class ProductListingComponent implements OnInit {
   shopService = inject(ShopService);
   route = inject(ActivatedRoute);
 
+  categories: any[] = [];
   products: Product[] = [];
   maxPrice = 5000;
   sortBy = 'featured';
@@ -448,14 +482,71 @@ export class ProductListingComponent implements OnInit {
   isLoading = false;
   categoryTitle = 'All Collections';
 
+  currentCategorySlug: string = '';
+  currentCategoryName: string = '';
+  currentSubCategorySlug: string = '';
+  currentSubCategoryName: string = '';
+
   ngOnInit() {
+    this.loadCategories();
     this.route.queryParams.subscribe(params => {
+      this.currentCategorySlug = params['category'] || '';
+      this.currentSubCategorySlug = params['subcategory'] || '';
       this.updateCategoryTitle(params);
       this.loadProducts();
     });
   }
 
+  loadCategories() {
+    this.shopService.getCategories().subscribe({
+      next: (cats) => {
+        this.categories = cats;
+        this.syncCategoryBreadcrumb();
+      },
+      error: () => {}
+    });
+  }
+
+  getCategoryIcon(slug: string): string {
+    const s = slug.toLowerCase();
+    if (s.includes('girl')) return '👧';
+    if (s.includes('boy')) return '👦';
+    if (s.includes('baby')) return '👶';
+    if (s.includes('ethnic')) return '🥻';
+    if (s.includes('dress')) return '👗';
+    if (s.includes('top')) return '👚';
+    if (s.includes('bottom')) return '👖';
+    if (s.includes('winter')) return '🧥';
+    return '📁';
+  }
+
+  isSubActive(subSlug: string): boolean {
+    if (!this.currentSubCategorySlug || !subSlug) return false;
+    return this.currentSubCategorySlug.trim().toLowerCase() === subSlug.trim().toLowerCase();
+  }
+
+  syncCategoryBreadcrumb() {
+    if (this.currentCategorySlug) {
+      const foundCat = this.categories.find(c => c.slug.toLowerCase() === this.currentCategorySlug.toLowerCase());
+      if (foundCat) {
+        this.currentCategoryName = foundCat.name;
+        if (this.currentSubCategorySlug && foundCat.subCategories) {
+          const foundSub = foundCat.subCategories.find((s: any) => s.slug.toLowerCase() === this.currentSubCategorySlug.toLowerCase());
+          if (foundSub) {
+            this.currentSubCategoryName = foundSub.name;
+          }
+        } else {
+          this.currentSubCategoryName = '';
+        }
+      }
+    } else {
+      this.currentCategoryName = '';
+      this.currentSubCategoryName = '';
+    }
+  }
+
   updateCategoryTitle(params: any) {
+    this.syncCategoryBreadcrumb();
     if (params['category']) {
       const c = params['category'].toLowerCase();
       if (c === 'girls') this.categoryTitle = "Girls' Collection";
@@ -464,6 +555,11 @@ export class ProductListingComponent implements OnInit {
       else if (c === 'ethnic-wear') this.categoryTitle = "Ethnic Wear";
       else if (c === 'dresses') this.categoryTitle = "Dresses & Frocks";
       else this.categoryTitle = params['category'].replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+
+      if (params['subcategory']) {
+        const subName = params['subcategory'].replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+        this.categoryTitle += ` — ${subName}`;
+      }
     } else if (params['search']) {
       this.categoryTitle = `Search results for "${params['search']}"`;
     } else {

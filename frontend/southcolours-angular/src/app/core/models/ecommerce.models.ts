@@ -5,6 +5,8 @@ export interface Category {
   description?: string;
   imageUrl?: string;
   displayOrder: number;
+  isActive?: boolean;
+  targetGender?: number;
   subCategories?: SubCategory[];
 }
 
