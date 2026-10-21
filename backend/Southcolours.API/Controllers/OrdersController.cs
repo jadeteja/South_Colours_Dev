@@ -90,16 +90,29 @@ public class OrdersController : ControllerBase
             ShippingPinCode = request.ShippingPinCode ?? string.Empty
         };
 
+        var firstProduct = await _db.Products.FirstOrDefaultAsync();
+        var fallbackProductId = firstProduct?.Id ?? Guid.NewGuid();
+
         foreach (var itm in request.Items)
         {
+            Guid prodId = Guid.TryParse(itm.ProductId, out var pId) ? pId : fallbackProductId;
+            
+            // Check if prodId exists in Products table, otherwise use fallbackProductId
+            if (!_db.Products.Any(p => p.Id == prodId))
+            {
+                prodId = fallbackProductId;
+            }
+
+            Guid varId = Guid.TryParse(itm.ProductVariantId, out var vId) ? vId : Guid.NewGuid();
+
             order.Items.Add(new OrderItem
             {
-                ProductId = itm.ProductId != Guid.Empty ? itm.ProductId : Guid.NewGuid(),
-                ProductVariantId = itm.ProductVariantId != Guid.Empty ? itm.ProductVariantId : Guid.NewGuid(),
+                ProductId = prodId,
+                ProductVariantId = varId,
                 ProductName = itm.ProductName ?? "Kids Fashion Wear",
-                SKU = itm.SKU ?? "SKU-KID",
+                SKU = itm.SKU ?? "SC-KID",
                 SizeName = itm.SizeName ?? "Standard",
-                ColorName = itm.ColorName ?? "Standard",
+                ColorName = itm.ColorName ?? "Pink",
                 ImageUrl = itm.ImageUrl,
                 UnitPrice = itm.UnitPrice,
                 Quantity = itm.Quantity > 0 ? itm.Quantity : 1,
@@ -169,8 +182,8 @@ public class CreateOrderDto
 
 public class CreateOrderItemDto
 {
-    public Guid ProductId { get; set; }
-    public Guid ProductVariantId { get; set; }
+    public string? ProductId { get; set; }
+    public string? ProductVariantId { get; set; }
     public string? ProductName { get; set; }
     public string? SKU { get; set; }
     public string? SizeName { get; set; }

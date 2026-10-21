@@ -31,6 +31,8 @@ public class SettingsController : ControllerBase
         return Ok(settings);
     }
 
+    public static StoreSettings LoadSettingsDirect() => LoadSettings();
+
     private static StoreSettings LoadSettings()
     {
         lock (FileLock)

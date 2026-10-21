@@ -21,6 +21,17 @@ public class PaymentsController : ControllerBase
         _razorpayService = razorpayService;
     }
 
+    [HttpGet("razorpay/key")]
+    public IActionResult GetRazorpayKey()
+    {
+        var settings = SettingsController.LoadSettingsDirect();
+        var key = !string.IsNullOrWhiteSpace(settings.RazorpayKey) && settings.RazorpayKey != "rzp_test_placeholder_key"
+            ? settings.RazorpayKey
+            : "rzp_test_Tplnc0eTN5xGQt";
+
+        return Ok(new { KeyId = key });
+    }
+
     [HttpPost("razorpay/create-order")]
     public IActionResult CreateRazorpayOrder([FromBody] CreateRazorpayOrderRequest request)
     {

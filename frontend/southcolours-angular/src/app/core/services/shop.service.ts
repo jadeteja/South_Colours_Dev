@@ -21,42 +21,7 @@ export class ShopService {
   cartTotal = computed(() => Math.max(0, this.cartSubtotal() - this.cartDiscount() + this.shippingFee()));
 
   constructor(private http: HttpClient) {
-    // Initialize mock cart items matching Screen 4 (Pink Lehenga Set, Yellow Anarkali, Boy's Kurta Set)
-    this.cartItems.set([
-      {
-        productId: 'p1',
-        productVariantId: 'v1',
-        name: 'Pink Lehenga Set',
-        size: '3-4Y',
-        color: 'Pink',
-        price: 2499,
-        originalPrice: 3499,
-        imageUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
-        quantity: 1
-      },
-      {
-        productId: 'p2',
-        productVariantId: 'v2',
-        name: 'Yellow Anarkali',
-        size: '2-3Y',
-        color: 'Yellow',
-        price: 1899,
-        originalPrice: 2599,
-        imageUrl: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?auto=format&fit=crop&w=600&q=80',
-        quantity: 1
-      },
-      {
-        productId: 'p3',
-        productVariantId: 'v3',
-        name: "Boy's Kurta Set",
-        size: '4-5Y',
-        color: 'Navy Blue',
-        price: 1599,
-        originalPrice: 2299,
-        imageUrl: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=600&q=80',
-        quantity: 1
-      }
-    ]);
+    this.cartItems.set([]);
   }
 
   getBanners(): Observable<Banner[]> {
@@ -173,6 +138,10 @@ export class ShopService {
   }
 
   // Payments / Razorpay
+  getRazorpayKey(): Observable<{ keyId: string }> {
+    return this.http.get<{ keyId: string }>(`${this.apiUrl}/payments/razorpay/key`);
+  }
+
   createRazorpayOrder(amount: number, currency = 'INR', receipt?: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/payments/razorpay/create-order`, {
       amount,

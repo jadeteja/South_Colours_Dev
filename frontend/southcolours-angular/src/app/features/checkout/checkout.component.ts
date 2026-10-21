@@ -374,8 +374,8 @@ export class CheckoutComponent {
       shippingState: this.customerAddress.state,
       shippingPinCode: this.customerAddress.pinCode,
       items: this.shopService.cartItems().map(i => ({
-        productId: i.productId,
-        productVariantId: i.productVariantId,
+        productId: i.productId && i.productId.length === 36 ? i.productId : null,
+        productVariantId: i.productVariantId && i.productVariantId.length === 36 ? i.productVariantId : null,
         productName: i.name,
         sku: 'SC-KID',
         sizeName: i.size,
@@ -405,17 +405,14 @@ export class CheckoutComponent {
         // Razorpay flow
         this.initiateRazorpayPayment(order);
       },
-      error: () => {
-        // Fallback for demo navigation if offline
+      error: (err) => {
         this.isProcessing = false;
-        this.shopService.clearCart();
-        this.router.navigate(['/order-confirmation'], {
-          queryParams: {
-            orderId: 'SC' + Math.floor(100000 + Math.random() * 900000),
-            date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-            amount: this.shopService.cartTotal()
-          }
-        });
+        console.error('Order creation error:', err);
+        const detailedMsg = err.error?.message 
+          || (err.error?.errors ? JSON.stringify(err.error.errors) : null)
+          || err.message 
+          || 'Failed to initialize order. Please check your network or try again.';
+        alert(`Failed to initialize order: ${detailedMsg}`);
       }
     });
   }
@@ -423,88 +420,77 @@ export class CheckoutComponent {
   private initiateRazorpayPayment(order: any) {
     this.loadRazorpayScript().then((loaded) => {
       if (!loaded || !(window as any).Razorpay) {
-        // Fallback simulate successful payment
         this.isProcessing = false;
-        this.shopService.clearCart();
-        this.router.navigate(['/order-confirmation'], {
-          queryParams: {
-            orderId: order.orderNumber,
-            date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-            amount: order.totalAmount,
-            paymentMethod: 'Razorpay (Simulated)'
-          }
-        });
+        alert('Razorpay gateway failed to load. Please verify your internet connection or ad-blocker settings.');
         return;
       }
 
-      this.shopService.createRazorpayOrder(order.totalAmount, 'INR', order.orderNumber).subscribe({
-        next: (rzpOrder: any) => {
-          const options = {
-            key: 'rzp_test_placeholder_key',
-            amount: order.totalAmount * 100,
-            currency: 'INR',
-            name: 'South Colours',
-            description: 'Little Styles, Big Smiles',
-            image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=120&q=80',
-            order_id: rzpOrder.razorpayOrderId,
-            handler: (response: any) => {
-              this.shopService.verifyRazorpayPayment({
-                internalOrderId: order.id,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature
-              }).subscribe({
-                next: () => {
-                  this.isProcessing = false;
-                  this.shopService.clearCart();
-                  this.router.navigate(['/order-confirmation'], {
-                    queryParams: {
-                      orderId: order.orderNumber,
-                      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-                      amount: order.totalAmount,
-                      paymentMethod: 'Razorpay'
+      this.shopService.getRazorpayKey().subscribe({
+        next: (keyRes) => {
+          const razorpayKey = keyRes.keyId || 'rzp_test_Tplnc0eTN5xGQt';
+
+          this.shopService.createRazorpayOrder(order.totalAmount, 'INR', order.orderNumber).subscribe({
+            next: (rzpOrder: any) => {
+              const options = {
+                key: razorpayKey,
+                amount: order.totalAmount * 100,
+                currency: 'INR',
+                name: 'South Colours',
+                description: 'Little Styles, Big Smiles',
+                image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=120&q=80',
+                order_id: rzpOrder.razorpayOrderId,
+                handler: (response: any) => {
+                  this.shopService.verifyRazorpayPayment({
+                    internalOrderId: order.id,
+                    razorpayOrderId: response.razorpay_order_id,
+                    razorpayPaymentId: response.razorpay_payment_id,
+                    razorpaySignature: response.razorpay_signature
+                  }).subscribe({
+                    next: () => {
+                      this.isProcessing = false;
+                      this.shopService.clearCart();
+                      this.router.navigate(['/order-confirmation'], {
+                        queryParams: {
+                          orderId: order.orderNumber,
+                          date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+                          amount: order.totalAmount,
+                          paymentMethod: 'Razorpay'
+                        }
+                      });
+                    },
+                    error: (verifyErr) => {
+                      this.isProcessing = false;
+                      alert(verifyErr.error?.message || 'Payment verification failed. If money was debited, it will be refunded automatically.');
                     }
                   });
                 },
-                error: () => {
-                  this.isProcessing = false;
-                  this.shopService.clearCart();
-                  this.router.navigate(['/order-confirmation'], {
-                    queryParams: {
-                      orderId: order.orderNumber,
-                      amount: order.totalAmount
-                    }
-                  });
+                prefill: {
+                  name: this.customerAddress.name,
+                  contact: this.customerAddress.phone,
+                  email: 'customer@southcolours.com'
+                },
+                theme: {
+                  color: '#FF4081'
+                },
+                modal: {
+                  ondismiss: () => {
+                    this.isProcessing = false;
+                  }
                 }
-              });
-            },
-            prefill: {
-              name: this.customerAddress.name,
-              contact: this.customerAddress.phone,
-              email: 'customer@southcolours.com'
-            },
-            theme: {
-              color: '#FF4081'
-            },
-            modal: {
-              ondismiss: () => {
-                this.isProcessing = false;
-              }
-            }
-          };
+              };
 
-          const rzp = new (window as any).Razorpay(options);
-          rzp.open();
+              const rzp = new (window as any).Razorpay(options);
+              rzp.open();
+            },
+            error: (createErr) => {
+              this.isProcessing = false;
+              alert(createErr.error?.message || 'Unable to create Razorpay payment order. Please try again.');
+            }
+          });
         },
         error: () => {
           this.isProcessing = false;
-          this.shopService.clearCart();
-          this.router.navigate(['/order-confirmation'], {
-            queryParams: {
-              orderId: order.orderNumber,
-              amount: order.totalAmount
-            }
-          });
+          alert('Unable to retrieve payment configuration. Please try again later.');
         }
       });
     });

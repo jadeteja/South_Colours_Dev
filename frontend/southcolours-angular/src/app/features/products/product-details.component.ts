@@ -505,9 +505,12 @@ export class ProductDetailsComponent implements OnInit {
 
   onAddToCart() {
     if (!this.product) return;
+    const variant = this.product.variants?.find(v => v.sizeName === this.selectedSize);
+    const variantId = variant?.id || this.product.variants?.[0]?.id || this.product.id;
+
     this.shopService.addToCart({
       productId: this.product.id,
-      productVariantId: 'v-' + this.selectedSize,
+      productVariantId: variantId,
       name: this.product.name,
       size: this.selectedSize,
       color: this.selectedColor,
