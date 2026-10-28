@@ -9,6 +9,10 @@ using Southcolours.Persistence.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Dynamic port binding for Render (reads $PORT, defaults to 8080 or 5000)
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 // 1. Database Connection (Supports PostgreSQL for Cloud/Render and SQL Server for Local)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -132,29 +136,7 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// 7. Automatic Migration & Seed on Startup
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        
-        // Ensure database tables are created (works across both SQL Server and PostgreSQL)
-        await context.Database.EnsureCreatedAsync();
-
-        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred during database migration/seeding.");
-    }
-}
-
-// 8. HTTP Pipeline
+// 7. HTTP Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -166,5 +148,32 @@ app.UseAuthorization();
 
 // Map all ASP.NET Core API Controllers
 app.MapControllers();
+
+// Health check endpoint for Render
+app.MapGet("/", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0" }));
+
+// 8. Automatic Migration & Seed on Startup (Background task so web server starts immediately without blocking port binding)
+_ = Task.Run(async () =>
+{
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        logger.LogInformation("Starting database initialization...");
+        await context.Database.EnsureCreatedAsync();
+        logger.LogInformation("Database EnsureCreated finished.");
+
+        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
+        logger.LogInformation("Database seeding completed successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred during database migration/seeding.");
+    }
+});
 
 app.Run();
