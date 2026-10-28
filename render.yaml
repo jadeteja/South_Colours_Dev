@@ -41,7 +41,7 @@ services:
     region: oregon
     rootDir: frontend/southcolours-angular
     buildCommand: npm install && npm run build
-    publishPath: dist/southcolours-angular/browser
+    staticPublishPath: dist/southcolours-angular/browser
     routes:
       # SPA rewrite rule so Angular client-side router handles paths
       - type: rewrite
