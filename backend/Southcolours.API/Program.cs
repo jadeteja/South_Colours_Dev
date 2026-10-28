@@ -15,11 +15,24 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    // Auto-detect PostgreSQL (Supabase / Render / Neon connection strings contain Host=, postgresql://, or Server=...postgres)
-    if (connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
-        connectionString.Contains("User Id=", StringComparison.OrdinalIgnoreCase) && connectionString.Contains("Port=", StringComparison.OrdinalIgnoreCase) ||
-        connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+    // Auto-detect PostgreSQL (Supabase / Render / Neon connection strings contain Host=, postgresql://, or postgres://)
+    if (connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
         connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        // Parse URI format into Npgsql key-value format
+        var uri = new Uri(connectionString);
+        var userInfo = uri.UserInfo.Split(':', 2);
+        var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "postgres";
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var database = uri.AbsolutePath.TrimStart('/');
+        if (string.IsNullOrEmpty(database)) database = "postgres";
+
+        var npgsqlConn = $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+        options.UseNpgsql(npgsqlConn, b => b.MigrationsAssembly("Southcolours.Persistence"));
+    }
+    else if (connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+             connectionString.Contains("Server=") && connectionString.Contains("postgres", StringComparison.OrdinalIgnoreCase))
     {
         options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Southcolours.Persistence"));
     }
