@@ -32,12 +32,11 @@ services:
   # ----------------------------------------------------
   # 2. Frontend Static Site (Angular 19 SPA)
   # Note: Static sites are served globally via Render's CDN,
-  # so 'region' must not be specified.
+  # so 'plan' and 'region' must not be specified.
   # ----------------------------------------------------
   - type: web
     name: southcolours-web
     runtime: static
-    plan: free
     rootDir: frontend/southcolours-angular
     buildCommand: npm install && npm run build
     staticPublishPath: dist/southcolours-angular/browser
