@@ -133,6 +133,18 @@ import { Banner } from '../../core/models/ecommerce.models';
     .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid #F1F5F9; background: #F8FAFC;
       .btn-cancel { background: transparent; border: 1px solid #CBD5E1; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
     }
+
+    @media (max-width: 1024px) {
+      .banners-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    }
+
+    @media (max-width: 768px) {
+      .page-top-row { flex-direction: column; align-items: flex-start; gap: 14px;
+        .btn-primary { width: 100%; }
+      }
+      .banners-grid { grid-template-columns: 1fr; gap: 14px; }
+      .form-row { flex-direction: column; gap: 16px; }
+    }
   `]
 })
 export class AdminBannersComponent implements OnInit {

@@ -148,6 +148,19 @@ import { ShopService } from '../../core/services/shop.service';
     .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid #F1F5F9; background: #F8FAFC;
       .btn-cancel { background: transparent; border: 1px solid #CBD5E1; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
     }
+
+    @media (max-width: 768px) {
+      .page-top-row { flex-direction: column; align-items: flex-start; gap: 14px;
+        .btn-primary { width: 100%; }
+      }
+      .coupons-grid { grid-template-columns: 1fr; gap: 16px; }
+      .form-row { flex-direction: column; gap: 16px; }
+    }
+
+    @media (max-width: 480px) {
+      .coupon-ticket-card { flex-direction: column; }
+      .ticket-left { width: 100%; border-right: none; border-bottom: 2px dashed #FF4081; padding: 12px; }
+    }
   `]
 })
 export class AdminCouponsComponent implements OnInit {

@@ -187,6 +187,14 @@ import { ShopService } from '../../core/services/shop.service';
       p { font-size: 11px; color: var(--text-muted); margin: 2px 0 0 0; }
       .toggle-check { width: 18px; height: 18px; accent-color: var(--primary-pink); cursor: pointer; }
     }
+
+    @media (max-width: 900px) {
+      .settings-grid { grid-template-columns: 1fr; gap: 16px; }
+      .page-top-row { flex-direction: column; align-items: flex-start; gap: 14px;
+        .btn-primary { width: 100%; }
+      }
+      .form-row { flex-direction: column; gap: 16px; }
+    }
   `]
 })
 export class AdminSettingsComponent implements OnInit {

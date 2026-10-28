@@ -108,8 +108,31 @@ button {
   overflow: hidden;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   position: relative;
+  display: flex;
+  flex-direction: column;
   &:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-hover);
   }
 }
+
+/* Responsive Table Wrapper Utility */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+/* Responsive Image Utility */
+img, svg {
+  max-width: 100%;
+}
+
+/* Mobile Touch Tap Targets */
+@media (max-width: 767px) {
+  button, .btn-primary, .btn-secondary {
+    min-height: 44px;
+  }
+}
+

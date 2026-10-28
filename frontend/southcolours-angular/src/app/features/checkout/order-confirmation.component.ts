@@ -163,6 +163,27 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
         }
       }
     }
+
+    @media (max-width: 600px) {
+      .confirmation-card {
+        padding: 30px 18px;
+        border-radius: 20px;
+      }
+      .congrats-title {
+        font-size: 22px;
+      }
+      .order-details-table {
+        padding: 12px 14px;
+        .detail-row {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 2px;
+          .detail-val {
+            align-self: flex-end;
+          }
+        }
+      }
+    }
   `]
 })
 export class OrderConfirmationComponent {

@@ -1,0 +1,32 @@
+# Build Stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Copy solution and project files first to cache restore
+COPY backend/Southcolours.slnx ./backend/
+COPY backend/Southcolours.Domain/Southcolours.Domain.csproj ./backend/Southcolours.Domain/
+COPY backend/Southcolours.Application/Southcolours.Application.csproj ./backend/Southcolours.Application/
+COPY backend/Southcolours.Infrastructure/Southcolours.Infrastructure.csproj ./backend/Southcolours.Infrastructure/
+COPY backend/Southcolours.Persistence/Southcolours.Persistence.csproj ./backend/Southcolours.Persistence/
+COPY backend/Southcolours.API/Southcolours.API.csproj ./backend/Southcolours.API/
+COPY backend/Southcolours.Tests/Southcolours.Tests.csproj ./backend/Southcolours.Tests/
+
+RUN dotnet restore backend/Southcolours.slnx
+
+# Copy the rest of the backend source files
+COPY backend/ ./backend/
+
+WORKDIR /src/backend/Southcolours.API
+RUN dotnet publish Southcolours.API.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime Stage
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Render exposes the PORT environment variable (default 10000 or 8080)
+ENV ASPNETCORE_URLS=http://+:8080
+ENV PORT=8080
+EXPOSE 8080
+
+ENTRYPOINT ["dotnet", "Southcolours.API.dll"]

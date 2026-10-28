@@ -1,0 +1,49 @@
+services:
+  # ----------------------------------------------------
+  # 1. Backend Web Service (.NET 10 API)
+  # ----------------------------------------------------
+  - type: web
+    name: southcolours-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile.api
+    dockerContext: .
+    plan: free
+    region: oregon
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # Set your remote SQL Server connection string in Render Dashboard
+      - key: JwtSettings__Secret
+        generateValue: true
+      - key: JwtSettings__Issuer
+        value: SouthColoursAPI
+      - key: JwtSettings__Audience
+        value: SouthColoursFrontend
+      - key: Razorpay__KeyId
+        sync: false
+      - key: Razorpay__KeySecret
+        sync: false
+      - key: Razorpay__WebhookSecret
+        sync: false
+      - key: FrontendUrl
+        fromStaticSite:
+          name: southcolours-web
+          property: url
+
+  # ----------------------------------------------------
+  # 2. Frontend Static Site (Angular 19 SPA)
+  # ----------------------------------------------------
+  - type: web
+    name: southcolours-web
+    runtime: static
+    plan: free
+    region: oregon
+    rootDir: frontend/southcolours-angular
+    buildCommand: npm install && npm run build
+    publishPath: dist/southcolours-angular/browser
+    routes:
+      # SPA rewrite rule so Angular client-side router handles paths
+      - type: rewrite
+        source: /*
+        destination: /index.html

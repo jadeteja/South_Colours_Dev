@@ -309,6 +309,36 @@ import { ShopService } from '../../core/services/shop.service';
         pointer-events: none;
       }
     }
+
+    @media (max-width: 900px) {
+      .cart-layout {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .cart-card {
+        flex-direction: column;
+        align-items: flex-start;
+        position: relative;
+        gap: 12px;
+      }
+      .cart-thumb {
+        width: 100%;
+        height: 180px;
+      }
+      .stepper-wrap {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .coupon-input-group {
+        flex-direction: column;
+        .apply-btn {
+          padding: 10px;
+        }
+      }
+    }
   `]
 })
 export class CartComponent {

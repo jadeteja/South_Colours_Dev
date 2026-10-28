@@ -118,6 +118,19 @@ import { ShopService } from '../../core/services/shop.service';
     @media print {
       .page-top-row .export-actions { display: none; }
     }
+
+    @media (max-width: 1024px) {
+      .reports-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    }
+
+    @media (max-width: 768px) {
+      .page-top-row { flex-direction: column; align-items: flex-start; gap: 14px;
+        .export-actions { width: 100%; flex-wrap: wrap; }
+      }
+      .reports-kpi-grid { grid-template-columns: 1fr; gap: 12px; }
+      .table-card { overflow-x: auto; }
+      .data-table { min-width: 650px; }
+    }
   `]
 })
 export class AdminReportsComponent implements OnInit {

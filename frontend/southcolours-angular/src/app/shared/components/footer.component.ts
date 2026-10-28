@@ -160,9 +160,40 @@ import { RouterModule } from '@angular/router';
         }
       }
     }
+    @media (max-width: 1024px) {
+      .footer-content {
+        grid-template-columns: 1.5fr 1fr 1fr 1fr;
+        gap: 24px;
+      }
+    }
     @media (max-width: 768px) {
+      .footer {
+        padding-top: 36px;
+        margin-top: 40px;
+      }
+      .footer-content {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 28px;
+        padding-bottom: 24px;
+      }
+      .brand-col {
+        grid-column: span 2;
+        .brand-desc {
+          max-width: 100%;
+        }
+      }
+      .bottom-flex {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+    }
+    @media (max-width: 480px) {
       .footer-content {
         grid-template-columns: 1fr;
+      }
+      .brand-col {
+        grid-column: span 1;
       }
     }
   `]

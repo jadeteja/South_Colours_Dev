@@ -328,6 +328,25 @@ import { ShopService } from '../../core/services/shop.service';
         }
       }
     }
+
+    @media (max-width: 900px) {
+      .checkout-layout {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .checkout-card {
+        padding: 16px;
+      }
+      .summary-card {
+        padding: 16px;
+      }
+      .pay-method-option {
+        padding: 10px 12px;
+      }
+    }
   `]
 })
 export class CheckoutComponent {

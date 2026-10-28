@@ -15,21 +15,37 @@ import { Product } from '../../core/models/ecommerce.models';
       <div class="header-main">
         <div class="container header-content">
           <!-- Logo -->
-          <a routerLink="/" class="logo-group">
-            <div class="logo-flower">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#FF4081" stroke-width="2">
-                <circle cx="12" cy="12" r="3" fill="#FF4081"/>
-                <path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 4 3s4-1 4-3a4 4 0 0 0-4-4z" fill="#FFD6E7"/>
-                <path d="M12 22a4 4 0 0 0 4-4c0-2-2-3-4-3s-4 1-4 3a4 4 0 0 0 4 4z" fill="#FFD6E7"/>
-                <path d="M2 12a4 4 0 0 0 4 4c2 0 3-2 3-4s-1-4-3-4a4 4 0 0 0-4 4z" fill="#FFD6E7"/>
-                <path d="M22 12a4 4 0 0 0-4-4c-2 0-3 2-3 4s1 4 3 4a4 4 0 0 0 4-4z" fill="#FFD6E7"/>
-              </svg>
-            </div>
-            <div class="logo-text">
-              <span class="brand-title">Southcolours</span>
-              <span class="brand-tagline">Little Styles, Big Smiles</span>
-            </div>
-          </a>
+          <div class="logo-wrapper">
+            <button class="mobile-menu-toggle" (click)="toggleMobileMenu()" aria-label="Toggle Navigation Menu">
+              @if (!isMobileMenuOpen) {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              } @else {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              }
+            </button>
+            <a routerLink="/" class="logo-group" (click)="closeMobileMenu()">
+              <div class="logo-flower">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#FF4081" stroke-width="2">
+                  <circle cx="12" cy="12" r="3" fill="#FF4081"/>
+                  <path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 4 3s4-1 4-3a4 4 0 0 0-4-4z" fill="#FFD6E7"/>
+                  <path d="M12 22a4 4 0 0 0 4-4c0-2-2-3-4-3s-4 1-4 3a4 4 0 0 0 4 4z" fill="#FFD6E7"/>
+                  <path d="M2 12a4 4 0 0 0 4 4c2 0 3-2 3-4s-1-4-3-4a4 4 0 0 0-4 4z" fill="#FFD6E7"/>
+                  <path d="M22 12a4 4 0 0 0-4-4c-2 0-3 2-3 4s1 4 3 4a4 4 0 0 0 4-4z" fill="#FFD6E7"/>
+                </svg>
+              </div>
+              <div class="logo-text">
+                <span class="brand-title">Southcolours</span>
+                <span class="brand-tagline">Little Styles, Big Smiles</span>
+              </div>
+            </a>
+          </div>
 
           <!-- Search Bar with Suggestions & Recent Searches -->
           <div class="search-container" (click)="$event.stopPropagation()">
@@ -131,17 +147,20 @@ import { Product } from '../../core/models/ecommerce.models';
       </div>
 
       <!-- Category Navigation Links Matching Reference -->
-      <nav class="nav-bar">
+      <nav class="nav-bar" [class.mobile-open]="isMobileMenuOpen">
         <div class="container nav-content">
-          <a routerLink="/products" [queryParams]="{ category: 'girls' }" routerLinkActive="active">Girls</a>
-          <a routerLink="/products" [queryParams]="{ category: 'boys' }" routerLinkActive="active">Boys</a>
-          <a routerLink="/products" [queryParams]="{ category: 'baby-wear' }" routerLinkActive="active">Baby Wear</a>
-          <a routerLink="/products" [queryParams]="{ category: 'ethnic-wear' }" routerLinkActive="active" class="highlight">Ethnic Wear</a>
-          <a routerLink="/products" [queryParams]="{ filter: 'new-arrivals' }" routerLinkActive="active">New Arrivals</a>
-          <a routerLink="/products" [queryParams]="{ filter: 'offers' }" routerLinkActive="active" class="offers">Offers</a>
-          <a routerLink="/admin" class="admin-link">Admin Portal</a>
+          <a routerLink="/products" [queryParams]="{ category: 'girls' }" routerLinkActive="active" (click)="closeMobileMenu()">Girls</a>
+          <a routerLink="/products" [queryParams]="{ category: 'boys' }" routerLinkActive="active" (click)="closeMobileMenu()">Boys</a>
+          <a routerLink="/products" [queryParams]="{ category: 'baby-wear' }" routerLinkActive="active" (click)="closeMobileMenu()">Baby Wear</a>
+          <a routerLink="/products" [queryParams]="{ category: 'ethnic-wear' }" routerLinkActive="active" class="highlight" (click)="closeMobileMenu()">Ethnic Wear</a>
+          <a routerLink="/products" [queryParams]="{ filter: 'new-arrivals' }" routerLinkActive="active" (click)="closeMobileMenu()">New Arrivals</a>
+          <a routerLink="/products" [queryParams]="{ filter: 'offers' }" routerLinkActive="active" class="offers" (click)="closeMobileMenu()">Offers</a>
+          <a routerLink="/admin" class="admin-link" (click)="closeMobileMenu()">Admin Portal</a>
         </div>
       </nav>
+      @if (isMobileMenuOpen) {
+        <div class="mobile-menu-backdrop" (click)="closeMobileMenu()"></div>
+      }
     </header>
   `,
   styles: [`
@@ -388,6 +407,33 @@ import { Product } from '../../core/models/ecommerce.models';
         border: 2px solid white;
       }
     }
+    .logo-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .mobile-menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--dark-navy);
+      padding: 6px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      &:hover {
+        color: var(--primary-pink);
+      }
+    }
+    .mobile-menu-backdrop {
+      display: none;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-shrink: 0;
+    }
     .nav-bar {
       background: #FFFFFF;
       padding: 10px 0;
@@ -402,6 +448,7 @@ import { Product } from '../../core/models/ecommerce.models';
         color: var(--dark-navy);
         padding-bottom: 2px;
         position: relative;
+        white-space: nowrap;
         &:hover, &.active {
           color: var(--primary-pink);
         }
@@ -425,18 +472,107 @@ import { Product } from '../../core/models/ecommerce.models';
         border-radius: 6px;
       }
     }
+
+    @media (max-width: 900px) {
+      .header-content {
+        gap: 14px;
+      }
+      .nav-content {
+        gap: 20px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .mobile-menu-toggle {
+        display: flex;
+      }
+      .header-content {
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .logo-group .brand-tagline {
+        display: none;
+      }
+      .brand-title {
+        font-size: 22px;
+      }
+      .search-container {
+        order: 3;
+        max-width: 100%;
+        width: 100%;
+        flex: 1 1 100%;
+      }
+      .header-actions {
+        gap: 14px;
+      }
+      .mobile-menu-backdrop {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 998;
+      }
+      .nav-bar {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        background: #FFFFFF;
+        z-index: 999;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+        padding: 60px 20px 24px;
+        overflow-y: auto;
+        &.mobile-open {
+          display: block;
+        }
+      }
+      .nav-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 18px;
+        font-size: 16px;
+        a {
+          width: 100%;
+          padding: 8px 0;
+          border-bottom: 1px solid #FFF0F5;
+          &.active::after {
+            bottom: -1px;
+          }
+        }
+        .admin-link {
+          margin-left: 0;
+          margin-top: 10px;
+          display: inline-block;
+        }
+      }
+    }
   `]
 })
 export class HeaderComponent implements OnInit {
   shopService = inject(ShopService);
   router = inject(Router);
 
+  isMobileMenuOpen = false;
   searchQuery = '';
   isSearchFocused = false;
   suggestions: Product[] = [];
   recentSearches: string[] = [];
 
   private searchDebounceTimer: any;
+
+  toggleMobileMenu() {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
+  closeMobileMenu() {
+    this.isMobileMenuOpen = false;
+  }
 
   ngOnInit() {
     this.loadRecentSearches();

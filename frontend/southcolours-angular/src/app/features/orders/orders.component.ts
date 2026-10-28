@@ -311,6 +311,42 @@ import { RouterModule } from '@angular/router';
         font-size: 13px;
       }
     }
+
+    @media (max-width: 900px) {
+      .account-layout {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      .nav-list {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        li a {
+          white-space: nowrap;
+        }
+      }
+    }
+
+    @media (max-width: 600px) {
+      .status-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        gap: 6px;
+      }
+      .order-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .order-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        .view-details-btn {
+          width: 100%;
+        }
+      }
+    }
   `]
 })
 export class OrdersComponent {

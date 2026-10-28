@@ -464,6 +464,83 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
         }
       }
     }
+
+    @media (max-width: 1024px) {
+      .details-layout {
+        gap: 28px;
+      }
+      .main-image-card {
+        height: 440px;
+      }
+      .product-title {
+        font-size: 26px;
+      }
+      .similar-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .details-layout {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      .gallery-wrapper {
+        flex-direction: column-reverse;
+      }
+      .thumbnails-col {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        .thumb-btn {
+          width: 60px;
+          height: 70px;
+          flex-shrink: 0;
+        }
+      }
+      .main-image-card {
+        height: 380px;
+      }
+      .product-title {
+        font-size: 22px;
+      }
+      .price-box .selling-price {
+        font-size: 24px;
+      }
+      .action-buttons-row {
+        flex-direction: column;
+        gap: 12px;
+        .add-cart-btn, .buy-now-btn {
+          width: 100%;
+        }
+      }
+      .trust-badges-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+      .specs-section .specs-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        gap: 14px;
+      }
+      .similar-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .main-image-card {
+        height: 300px;
+      }
+      .price-box {
+        flex-wrap: wrap;
+      }
+      .size-pills .size-pill {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+    }
   `]
 })
 export class ProductDetailsComponent implements OnInit {

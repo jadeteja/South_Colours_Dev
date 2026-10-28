@@ -106,6 +106,12 @@ import { ShopService } from '../../core/services/shop.service';
       }
       .empty-cell { text-align: center; padding: 32px; color: #94A3B8; }
     }
+
+    @media (max-width: 768px) {
+      .page-top-row { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .table-card { overflow-x: auto; }
+      .data-table { min-width: 650px; }
+    }
   `]
 })
 export class AdminReviewsComponent implements OnInit {

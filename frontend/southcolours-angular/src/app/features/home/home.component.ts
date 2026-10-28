@@ -404,6 +404,149 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
         text-decoration: line-through;
       }
     }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 1024px) {
+      .categories-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+      }
+      .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .hero-card {
+        padding: 32px 40px;
+      }
+      .hero-title {
+        font-size: 36px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero-card {
+        grid-template-columns: 1fr;
+        padding: 32px 24px;
+        text-align: center;
+      }
+      .hero-text-content {
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .hero-image-wrapper {
+        order: 1;
+        justify-content: center;
+        margin-bottom: 20px;
+        .hero-model-img {
+          max-height: 260px;
+        }
+      }
+      .hero-title {
+        font-size: 28px;
+        br { display: none; }
+      }
+      .hero-subtitle {
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+      .categories-grid {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        gap: 16px;
+        &::-webkit-scrollbar {
+          display: none;
+        }
+        scrollbar-width: none;
+      }
+      .category-circle-item {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        .circle-avatar {
+          width: 64px;
+          height: 64px;
+        }
+        .cat-icon {
+          font-size: 26px;
+        }
+      }
+      .promo-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .promo-card {
+        padding: 24px;
+      }
+      .promo-title {
+        font-size: 22px;
+      }
+      .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+      .product-img-link {
+        height: 200px;
+      }
+      .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        .section-title {
+          font-size: 22px;
+        }
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-card {
+        padding: 24px 16px;
+        border-radius: 20px;
+      }
+      .hero-title {
+        font-size: 24px;
+      }
+      .promo-card {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      .promo-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .promo-img-wrapper {
+        justify-content: center;
+        margin-top: 16px;
+        .promo-img {
+          width: 120px;
+          height: 140px;
+        }
+      }
+      .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .product-info {
+        padding: 10px 8px;
+      }
+      .product-name {
+        font-size: 13px;
+      }
+      .product-img-link {
+        height: 160px;
+      }
+      .price-row .selling-price {
+        font-size: 15px;
+      }
+      .badge-discount {
+        font-size: 10px;
+        padding: 2px 4px;
+      }
+    }
   `]
 })
 export class HomeComponent implements OnInit {

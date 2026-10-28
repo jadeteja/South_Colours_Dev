@@ -123,6 +123,14 @@ import { Product } from '../../core/models/ecommerce.models';
       .btn-add-img { background: #FFFFFF; border: 1px solid #CBD5E1; padding: 10px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
       .btn-file-upload { background: #FFF0F5; border: 1px solid var(--border-pink); color: var(--primary-pink); padding: 10px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
     }
+
+    @media (max-width: 768px) {
+      .page-top-row { flex-direction: column; align-items: flex-start; gap: 14px;
+        .action-btns { width: 100%; justify-content: space-between; }
+      }
+      .form-row { flex-direction: column; gap: 16px; }
+      .add-image-row { flex-direction: column; align-items: stretch; }
+    }
   `]
 })
 export class AdminEditProductComponent implements OnInit {

@@ -26,9 +26,34 @@ import { Product } from '../../core/models/ecommerce.models';
         }
       </nav>
 
+      <div class="mobile-filter-bar">
+        <button class="mobile-filter-btn" (click)="toggleMobileFilters()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+          Filters
+        </button>
+      </div>
+
+      @if (isMobileFilterOpen) {
+        <div class="filter-backdrop" (click)="closeMobileFilters()"></div>
+      }
+
       <div class="listing-layout">
         <!-- Left Sidebar Filters Matching Reference Screen 2 -->
-        <aside class="sidebar-filters">
+        <aside class="sidebar-filters" [class.mobile-open]="isMobileFilterOpen">
+          <div class="filter-mobile-header">
+            <h3>Filters</h3>
+            <button class="btn-close-filter" (click)="closeMobileFilters()">✕</button>
+          </div>
           <!-- Categories Accordion / Tree (Dynamic from Backend) -->
           <div class="filter-card">
             <h3 class="filter-header">Categories</h3>
@@ -457,16 +482,138 @@ import { Product } from '../../core/models/ecommerce.models';
         font-weight: 600;
       }
     }
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid rgba(255, 64, 129, 0.2);
-      border-top-color: var(--primary-pink);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    .mobile-filter-bar {
+      display: none;
+      margin-bottom: 16px;
+      .mobile-filter-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        background: #FFFFFF;
+        border: 1.5px solid var(--border-pink);
+        border-radius: var(--radius-full);
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--dark-navy);
+      }
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .filter-mobile-header {
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border-pink);
+      h3 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--dark-navy);
+        margin: 0;
+      }
+      .btn-close-filter {
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 4px;
+      }
+    }
+    .filter-backdrop {
+      display: none;
+    }
+
+    @media (max-width: 1024px) {
+      .listing-layout {
+        grid-template-columns: 220px 1fr;
+        gap: 20px;
+      }
+      .product-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .mobile-filter-bar {
+        display: block;
+      }
+      .listing-layout {
+        grid-template-columns: 1fr;
+      }
+      .filter-backdrop {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 1040;
+      }
+      .sidebar-filters {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 300px;
+        background: #FFFFFF;
+        z-index: 1050;
+        padding: 24px 20px;
+        overflow-y: auto;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+        &.mobile-open {
+          transform: translateX(0);
+        }
+      }
+      .filter-mobile-header {
+        display: flex;
+      }
+      .listing-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        .sort-control {
+          width: 100%;
+          justify-content: space-between;
+          .sort-select {
+            flex: 1;
+            max-width: 200px;
+          }
+        }
+      }
+      .category-heading {
+        font-size: 24px;
+      }
+      .product-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      .product-img-link {
+        height: 220px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .product-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .product-img-link {
+        height: 170px;
+      }
+      .product-info {
+        padding: 10px 8px;
+      }
+      .product-name {
+        font-size: 13px;
+      }
+      .price-row .selling-price {
+        font-size: 14px;
+      }
     }
   `]
 })
@@ -474,6 +621,7 @@ export class ProductListingComponent implements OnInit {
   shopService = inject(ShopService);
   route = inject(ActivatedRoute);
 
+  isMobileFilterOpen = false;
   categories: any[] = [];
   products: Product[] = [];
   maxPrice = 5000;
@@ -486,6 +634,14 @@ export class ProductListingComponent implements OnInit {
   currentCategoryName: string = '';
   currentSubCategorySlug: string = '';
   currentSubCategoryName: string = '';
+
+  toggleMobileFilters() {
+    this.isMobileFilterOpen = !this.isMobileFilterOpen;
+  }
+
+  closeMobileFilters() {
+    this.isMobileFilterOpen = false;
+  }
 
   ngOnInit() {
     this.loadCategories();
