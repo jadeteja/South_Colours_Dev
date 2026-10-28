@@ -9,12 +9,25 @@ using Southcolours.Persistence.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Database Connection
+// 1. Database Connection (Supports PostgreSQL for Cloud/Render and SQL Server for Local)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString, b => b.MigrationsAssembly("Southcolours.Persistence")));
+{
+    // Auto-detect PostgreSQL (Supabase / Render / Neon connection strings contain Host=, postgresql://, or Server=...postgres)
+    if (connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+        connectionString.Contains("User Id=", StringComparison.OrdinalIgnoreCase) && connectionString.Contains("Port=", StringComparison.OrdinalIgnoreCase) ||
+        connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+        connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Southcolours.Persistence"));
+    }
+    else
+    {
+        options.UseSqlServer(connectionString, b => b.MigrationsAssembly("Southcolours.Persistence"));
+    }
+});
 
 // 2. Identity Services
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
@@ -100,6 +113,10 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
+        
+        // Ensure database tables are created (works across both SQL Server and PostgreSQL)
+        await context.Database.EnsureCreatedAsync();
+
         var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
