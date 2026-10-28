@@ -161,9 +161,7 @@ _ = Task.Run(async () =>
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        logger.LogInformation("Starting database initialization...");
-        await context.Database.EnsureCreatedAsync();
-        logger.LogInformation("Database EnsureCreated finished.");
+        logger.LogInformation("Database tables exist. Starting seeding...");
 
         var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
