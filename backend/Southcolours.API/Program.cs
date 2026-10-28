@@ -28,13 +28,26 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         var database = uri.AbsolutePath.TrimStart('/');
         if (string.IsNullOrEmpty(database)) database = "postgres";
 
-        var npgsqlConn = $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
-        options.UseNpgsql(npgsqlConn, b => b.MigrationsAssembly("Southcolours.Persistence"));
+        var npgsqlConn = $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;Command Timeout=300;Timeout=60;Keepalive=30;";
+        options.UseNpgsql(npgsqlConn, b => 
+        {
+            b.MigrationsAssembly("Southcolours.Persistence");
+            b.CommandTimeout(300);
+        });
     }
     else if (connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
              connectionString.Contains("Server=") && connectionString.Contains("postgres", StringComparison.OrdinalIgnoreCase))
     {
-        options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Southcolours.Persistence"));
+        var finalConn = connectionString;
+        if (!finalConn.Contains("Command Timeout", StringComparison.OrdinalIgnoreCase))
+        {
+            finalConn = finalConn.TrimEnd(';') + ";Command Timeout=300;Timeout=60;Keepalive=30;";
+        }
+        options.UseNpgsql(finalConn, b => 
+        {
+            b.MigrationsAssembly("Southcolours.Persistence");
+            b.CommandTimeout(300);
+        });
     }
     else
     {
