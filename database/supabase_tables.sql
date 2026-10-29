@@ -1,18 +1,28 @@
 -- ====================================================================
--- SOUTH COLOURS POSTGRESQL SCHEMA FOR SUPABASE
+-- SOUTH COLOURS EXACT EF CORE POSTGRESQL SCHEMA FOR SUPABASE
 -- Run this in your Supabase SQL Editor:
 -- Dashboard -> SQL Editor -> New Query -> Paste & Click Run
 -- ====================================================================
 
--- 1. ASP.NET IDENTITY TABLES
-CREATE TABLE IF NOT EXISTS "AspNetRoles" (
+-- 1. DROP EXISTING TABLES TO ENSURE CLEAN SCHEMA
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO public;
+GRANT ALL ON SCHEMA public TO anon;
+GRANT ALL ON SCHEMA public TO authenticated;
+GRANT ALL ON SCHEMA public TO service_role;
+
+-- 2. ASP.NET IDENTITY TABLES
+CREATE TABLE "AspNetRoles" (
     "Id" text NOT NULL PRIMARY KEY,
     "Name" varchar(256),
     "NormalizedName" varchar(256),
     "ConcurrencyStamp" text
 );
 
-CREATE TABLE IF NOT EXISTS "AspNetUsers" (
+CREATE TABLE "AspNetUsers" (
     "Id" text NOT NULL PRIMARY KEY,
     "UserName" varchar(256),
     "NormalizedUserName" varchar(256),
@@ -30,21 +40,21 @@ CREATE TABLE IF NOT EXISTS "AspNetUsers" (
     "AccessFailedCount" integer NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "AspNetRoleClaims" (
+CREATE TABLE "AspNetRoleClaims" (
     "Id" serial PRIMARY KEY,
     "RoleId" text NOT NULL REFERENCES "AspNetRoles"("Id") ON DELETE CASCADE,
     "ClaimType" text,
     "ClaimValue" text
 );
 
-CREATE TABLE IF NOT EXISTS "AspNetUserClaims" (
+CREATE TABLE "AspNetUserClaims" (
     "Id" serial PRIMARY KEY,
     "UserId" text NOT NULL REFERENCES "AspNetUsers"("Id") ON DELETE CASCADE,
     "ClaimType" text,
     "ClaimValue" text
 );
 
-CREATE TABLE IF NOT EXISTS "AspNetUserLogins" (
+CREATE TABLE "AspNetUserLogins" (
     "LoginProvider" text NOT NULL,
     "ProviderKey" text NOT NULL,
     "ProviderDisplayName" text,
@@ -52,13 +62,13 @@ CREATE TABLE IF NOT EXISTS "AspNetUserLogins" (
     PRIMARY KEY ("LoginProvider", "ProviderKey")
 );
 
-CREATE TABLE IF NOT EXISTS "AspNetUserRoles" (
+CREATE TABLE "AspNetUserRoles" (
     "UserId" text NOT NULL REFERENCES "AspNetUsers"("Id") ON DELETE CASCADE,
     "RoleId" text NOT NULL REFERENCES "AspNetRoles"("Id") ON DELETE CASCADE,
     PRIMARY KEY ("UserId", "RoleId")
 );
 
-CREATE TABLE IF NOT EXISTS "AspNetUserTokens" (
+CREATE TABLE "AspNetUserTokens" (
     "UserId" text NOT NULL REFERENCES "AspNetUsers"("Id") ON DELETE CASCADE,
     "LoginProvider" text NOT NULL,
     "Name" text NOT NULL,
@@ -66,8 +76,8 @@ CREATE TABLE IF NOT EXISTS "AspNetUserTokens" (
     PRIMARY KEY ("UserId", "LoginProvider", "Name")
 );
 
--- 2. STORE TABLES
-CREATE TABLE IF NOT EXISTS "Categories" (
+-- 3. STORE TABLES (With exact BaseEntity columns: CreatedAtUtc, UpdatedAtUtc, IsDeleted)
+CREATE TABLE "Categories" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "Name" varchar(150) NOT NULL,
     "Slug" varchar(150) NOT NULL UNIQUE,
@@ -76,11 +86,12 @@ CREATE TABLE IF NOT EXISTS "Categories" (
     "DisplayOrder" integer NOT NULL DEFAULT 0,
     "TargetGender" integer NOT NULL DEFAULT 0,
     "IsActive" boolean NOT NULL DEFAULT true,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "SubCategories" (
+CREATE TABLE "SubCategories" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "CategoryId" uuid NOT NULL REFERENCES "Categories"("Id") ON DELETE CASCADE,
     "Name" varchar(150) NOT NULL,
@@ -88,11 +99,12 @@ CREATE TABLE IF NOT EXISTS "SubCategories" (
     "Description" text,
     "DisplayOrder" integer NOT NULL DEFAULT 0,
     "IsActive" boolean NOT NULL DEFAULT true,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "Banners" (
+CREATE TABLE "Banners" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "Title" text NOT NULL,
     "Subtitle" text,
@@ -101,11 +113,12 @@ CREATE TABLE IF NOT EXISTS "Banners" (
     "TargetUrl" text,
     "DisplayOrder" integer NOT NULL DEFAULT 0,
     "IsActive" boolean NOT NULL DEFAULT true,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "Products" (
+CREATE TABLE "Products" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "CategoryId" uuid NOT NULL REFERENCES "Categories"("Id") ON DELETE CASCADE,
     "SubCategoryId" uuid REFERENCES "SubCategories"("Id") ON DELETE SET NULL,
@@ -131,21 +144,23 @@ CREATE TABLE IF NOT EXISTS "Products" (
     "IsOffer" boolean NOT NULL DEFAULT false,
     "OfferBadge" text,
     "IsActive" boolean NOT NULL DEFAULT true,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "ProductImages" (
+CREATE TABLE "ProductImages" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "ProductId" uuid NOT NULL REFERENCES "Products"("Id") ON DELETE CASCADE,
     "ImageUrl" text NOT NULL,
     "IsPrimary" boolean NOT NULL DEFAULT false,
     "DisplayOrder" integer NOT NULL DEFAULT 0,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "ProductVariants" (
+CREATE TABLE "ProductVariants" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "ProductId" uuid NOT NULL REFERENCES "Products"("Id") ON DELETE CASCADE,
     "SizeName" text NOT NULL,
@@ -153,63 +168,70 @@ CREATE TABLE IF NOT EXISTS "ProductVariants" (
     "ColorHex" text NOT NULL,
     "StockQuantity" integer NOT NULL DEFAULT 0,
     "SKU" text NOT NULL,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "ProductReviews" (
+CREATE TABLE "ProductReviews" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "ProductId" uuid NOT NULL REFERENCES "Products"("Id") ON DELETE CASCADE,
     "CustomerId" text NOT NULL,
     "CustomerName" text NOT NULL,
     "Rating" integer NOT NULL DEFAULT 5,
     "Comment" text NOT NULL,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "ShoppingCarts" (
+CREATE TABLE "ShoppingCarts" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "UserId" text NOT NULL UNIQUE,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "CartItems" (
+CREATE TABLE "CartItems" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "ShoppingCartId" uuid NOT NULL REFERENCES "ShoppingCarts"("Id") ON DELETE CASCADE,
     "ProductId" uuid NOT NULL REFERENCES "Products"("Id") ON DELETE CASCADE,
     "ProductVariantId" uuid REFERENCES "ProductVariants"("Id") ON DELETE SET NULL,
     "Quantity" integer NOT NULL DEFAULT 1,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "Wishlists" (
+CREATE TABLE "Wishlists" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "UserId" text NOT NULL UNIQUE,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "WishlistItems" (
+CREATE TABLE "WishlistItems" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "WishlistId" uuid NOT NULL REFERENCES "Wishlists"("Id") ON DELETE CASCADE,
     "ProductId" uuid NOT NULL REFERENCES "Products"("Id") ON DELETE CASCADE,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "CustomerProfiles" (
+CREATE TABLE "CustomerProfiles" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "UserId" text NOT NULL UNIQUE,
     "FullName" text NOT NULL,
     "PhoneNumber" text,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "CustomerAddresses" (
+CREATE TABLE "CustomerAddresses" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "CustomerProfileId" uuid NOT NULL REFERENCES "CustomerProfiles"("Id") ON DELETE CASCADE,
     "FullName" text NOT NULL,
@@ -220,22 +242,24 @@ CREATE TABLE IF NOT EXISTS "CustomerAddresses" (
     "PostalCode" text NOT NULL,
     "Country" text NOT NULL DEFAULT 'India',
     "IsDefault" boolean NOT NULL DEFAULT false,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "Coupons" (
+CREATE TABLE "Coupons" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "Code" varchar(50) NOT NULL UNIQUE,
     "DiscountAmount" numeric(18,2) NOT NULL,
     "MinimumOrderAmount" numeric(18,2) NOT NULL DEFAULT 0,
     "ExpiryDate" timestamptz NOT NULL,
     "IsActive" boolean NOT NULL DEFAULT true,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "Orders" (
+CREATE TABLE "Orders" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "OrderNumber" varchar(50) NOT NULL UNIQUE,
     "UserId" text NOT NULL,
@@ -256,11 +280,12 @@ CREATE TABLE IF NOT EXISTS "Orders" (
     "PaymentStatus" integer NOT NULL DEFAULT 0,
     "RazorpayOrderId" text,
     "RazorpayPaymentId" text,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "OrderItems" (
+CREATE TABLE "OrderItems" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "OrderId" uuid NOT NULL REFERENCES "Orders"("Id") ON DELETE CASCADE,
     "ProductId" uuid NOT NULL REFERENCES "Products"("Id") ON DELETE CASCADE,
@@ -271,11 +296,12 @@ CREATE TABLE IF NOT EXISTS "OrderItems" (
     "Quantity" integer NOT NULL DEFAULT 1,
     "TotalPrice" numeric(18,2) NOT NULL,
     "ImageUrl" text,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
 
-CREATE TABLE IF NOT EXISTS "OrderStatusHistories" (
+CREATE TABLE "OrderStatusHistories" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "OrderId" uuid NOT NULL REFERENCES "Orders"("Id") ON DELETE CASCADE,
     "Status" integer NOT NULL,
@@ -283,7 +309,7 @@ CREATE TABLE IF NOT EXISTS "OrderStatusHistories" (
     "CreatedAt" timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS "Payments" (
+CREATE TABLE "Payments" (
     "Id" uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     "OrderId" uuid NOT NULL REFERENCES "Orders"("Id") ON DELETE CASCADE,
     "PaymentProvider" text NOT NULL,
@@ -291,6 +317,7 @@ CREATE TABLE IF NOT EXISTS "Payments" (
     "ProviderOrderId" text,
     "Amount" numeric(18,2) NOT NULL,
     "Status" text NOT NULL,
-    "CreatedAt" timestamptz NOT NULL DEFAULT now(),
-    "UpdatedAt" timestamptz
+    "CreatedAtUtc" timestamptz NOT NULL DEFAULT now(),
+    "UpdatedAtUtc" timestamptz,
+    "IsDeleted" boolean NOT NULL DEFAULT false
 );
