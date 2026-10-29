@@ -30,11 +30,6 @@ public class ProductsController : ControllerBase
     {
         var query = _db.Products
             .AsNoTracking()
-            .AsSingleQuery()
-            .Include(p => p.Images)
-            .Include(p => p.Variants)
-            .Include(p => p.Category)
-            .Include(p => p.SubCategory)
             .Where(p => p.IsActive)
             .AsQueryable();
 
@@ -83,7 +78,14 @@ public class ProductsController : ControllerBase
         };
 
         var totalItems = await query.CountAsync();
-        var products = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var products = await query
+            .Include(p => p.Images)
+            .Include(p => p.Variants)
+            .Include(p => p.Category)
+            .Include(p => p.SubCategory)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
 
         return Ok(new
         {
@@ -99,6 +101,7 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetById(Guid id)
     {
         var product = await _db.Products
+            .AsNoTracking()
             .Include(p => p.Images)
             .Include(p => p.Variants)
             .Include(p => p.Category)
@@ -113,6 +116,7 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var product = await _db.Products
+            .AsNoTracking()
             .Include(p => p.Images)
             .Include(p => p.Variants)
             .Include(p => p.Category)

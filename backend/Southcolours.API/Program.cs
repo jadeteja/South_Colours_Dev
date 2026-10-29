@@ -156,6 +156,32 @@ app.MapControllers();
 // Health check endpoint for Render
 app.MapGet("/", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0" }));
 
+// Diagnostic database seeder endpoint
+app.MapGet("/api/seed", async (ApplicationDbContext context, UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager) =>
+{
+    try
+    {
+        await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
+        var catCount = await context.Categories.CountAsync();
+        var prodCount = await context.Products.CountAsync();
+        var bannerCount = await context.Banners.CountAsync();
+        var couponCount = await context.Coupons.CountAsync();
+        return Results.Ok(new 
+        { 
+            success = true, 
+            categories = catCount, 
+            products = prodCount, 
+            banners = bannerCount,
+            coupons = couponCount,
+            message = "Database seeded successfully!" 
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(detail: ex.ToString(), title: "Database Seeding Error");
+    }
+});
+
 // 8. Automatic Migration & Seed on Startup (Background task so web server starts immediately without blocking port binding)
 _ = Task.Run(async () =>
 {
