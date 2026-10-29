@@ -30,7 +30,7 @@ public class ProductsController : ControllerBase
     {
         var query = _db.Products
             .AsNoTracking()
-            .AsSplitQuery()
+            .AsSingleQuery()
             .Include(p => p.Images)
             .Include(p => p.Variants)
             .Include(p => p.Category)

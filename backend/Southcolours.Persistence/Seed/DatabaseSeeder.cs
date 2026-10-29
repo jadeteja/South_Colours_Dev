@@ -137,11 +137,26 @@ public static class DatabaseSeeder
 
             context.SubCategories.AddRange(lehengaCholiSub, pavadaiSattaiSub, anarkaliSub, gownSub, kurtaSetsSub);
             await context.SaveChangesAsync();
+        }
 
-            // 4. Products matching the exact cards from the Reference Image:
-            // Screen 2 & 3: Pink Lehenga Set (₹2,499 / ₹3,499), Yellow Anarkali (₹1,899), Purple Lehenga (₹2,299),
-            // Pavadai Sattai (₹1,599), Embroidered Kurta Set (₹1,799), Traditional Pattu Dress (₹2,699),
-            // Floral Lehenga (₹1,999), Green Anarkali (₹2,199), Festive Gown (₹2,499), Boy's Kurta Set (₹1,599)
+        // 4. Products matching the exact cards from the Reference Image
+        if (!await context.Products.AnyAsync())
+        {
+            var ethnicWearCategory = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "ethnic-wear")
+                ?? await context.Categories.FirstAsync();
+            var boysCategory = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "boys")
+                ?? ethnicWearCategory;
+
+            var lehengaCholiSub = await context.SubCategories.FirstOrDefaultAsync(s => s.Slug == "lehenga-choli")
+                ?? await context.SubCategories.FirstOrDefaultAsync();
+            var pavadaiSattaiSub = await context.SubCategories.FirstOrDefaultAsync(s => s.Slug == "pavadai-sattai")
+                ?? lehengaCholiSub;
+            var anarkaliSub = await context.SubCategories.FirstOrDefaultAsync(s => s.Slug == "anarkali")
+                ?? lehengaCholiSub;
+            var gownSub = await context.SubCategories.FirstOrDefaultAsync(s => s.Slug == "gown")
+                ?? lehengaCholiSub;
+            var kurtaSetsSub = await context.SubCategories.FirstOrDefaultAsync(s => s.Slug == "kurta-sets")
+                ?? lehengaCholiSub;
 
             var productsToSeed = new List<Product>
             {
@@ -479,8 +494,11 @@ public static class DatabaseSeeder
 
             context.Products.AddRange(productsToSeed);
             await context.SaveChangesAsync();
+        }
 
-            // 5. Promotional Coupons
+        // 5. Promotional Coupons
+        if (!await context.Coupons.AnyAsync())
+        {
             var welcomeCoupon = new Coupon
             {
                 Code = "WELCOME300",
@@ -510,8 +528,11 @@ public static class DatabaseSeeder
 
             context.Coupons.AddRange(welcomeCoupon, festiveCoupon);
             await context.SaveChangesAsync();
+        }
 
-            // 6. Marketing Banners
+        // 6. Marketing Banners
+        if (!await context.Banners.AnyAsync())
+        {
             var heroBanner = new Banner
             {
                 Title = "Trendy & Comfortable Kids Clothing",

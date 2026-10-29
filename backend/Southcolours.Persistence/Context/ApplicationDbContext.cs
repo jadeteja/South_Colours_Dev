@@ -49,7 +49,10 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
         builder.Entity<ProductVariant>(b =>
         {
             b.Property(v => v.PriceOverride).HasPrecision(18, 2);
-            b.Property(v => v.RowVersion).IsRowVersion();
+            if (!Database.IsNpgsql())
+            {
+                b.Property(v => v.RowVersion).IsRowVersion();
+            }
             b.HasIndex(v => v.SKU).IsUnique();
         });
 
@@ -86,9 +89,21 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
         builder.Entity<Category>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<SubCategory>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<Product>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<ProductImage>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<ProductVariant>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<Order>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<OrderItem>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<OrderStatusHistory>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<Payment>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<ShoppingCart>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<CartItem>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<Wishlist>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<WishlistItem>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<CustomerProfile>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<CustomerAddress>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<Coupon>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<ProductReview>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<Banner>().HasQueryFilter(e => !e.IsDeleted);
 
         // Prevent multiple cascade paths in SQL Server
         builder.Entity<CartItem>()
