@@ -2,12 +2,13 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Banner, Category, Product, CartItemModel } from '../models/ecommerce.models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ShopService {
-  private apiUrl = '/api';
+  private apiUrl = `${environment.apiUrl}/api`;
 
   // Signals for responsive, reactive state
   cartItems = signal<CartItemModel[]>([]);
@@ -204,4 +205,3 @@ export class ShopService {
     return this.wishlistIds().includes(productId);
   }
 }
-

@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface UserSession {
   token: string;
@@ -17,7 +18,7 @@ export interface UserSession {
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  private apiUrl = '/api/auth';
+  private apiUrl = `${environment.apiUrl}/api/auth`;
 
   currentUser = signal<UserSession | null>(this.getStoredUser());
 
@@ -68,4 +69,3 @@ export class AuthService {
     }
   }
 }
-

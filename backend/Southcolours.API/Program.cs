@@ -114,14 +114,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        var frontendUrl = builder.Configuration["FrontendUrl"];
-        var origins = new List<string> { "http://localhost:4200", "https://localhost:4200" };
-        if (!string.IsNullOrEmpty(frontendUrl))
-        {
-            origins.Add(frontendUrl.TrimEnd('/'));
-        }
-
-        policy.WithOrigins(origins.ToArray())
+        policy.SetIsOriginAllowed(origin => true)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
