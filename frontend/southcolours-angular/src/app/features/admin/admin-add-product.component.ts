@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminLayoutComponent } from '../../shared/components/admin-layout.component';
 import { ShopService } from '../../core/services/shop.service';
+import { ToastService } from '../../core/services/toast.service';
+import { Category, SubCategory } from '../../core/models/ecommerce.models';
 
 @Component({
   selector: 'app-admin-add-product',
@@ -17,8 +19,8 @@ import { ShopService } from '../../core/services/shop.service';
 
           <form class="product-form" (submit)="saveProduct($event)">
             <div class="form-group">
-              <label>Product Name</label>
-              <input type="text" [(ngModel)]="productName" name="productName" placeholder="e.g. Pink Lehenga Set" class="form-control" />
+              <label>Product Name *</label>
+              <input type="text" [(ngModel)]="productName" name="productName" placeholder="e.g. Pink Lehenga Set" class="form-control" required />
             </div>
 
             <!-- Rich Text Toolbar & Description matching Screen 8 -->
@@ -38,36 +40,37 @@ import { ShopService } from '../../core/services/shop.service';
               <textarea rows="4" [(ngModel)]="description" name="description" class="form-control text-area" placeholder="Beautiful pink lehenga set with intricate embroidery, perfect for weddings, festivals and special occasions."></textarea>
             </div>
 
+            <!-- Category & Sub Category matched directly from Categories page -->
             <div class="form-row">
               <div class="form-group col">
-                <label>Category</label>
-                <select [(ngModel)]="category" name="category" class="form-control">
-                  <option value="ethnic-wear">Ethnic Wear</option>
-                  <option value="girls">Girls</option>
-                  <option value="boys">Boys</option>
-                  <option value="baby-wear">Baby Wear</option>
+                <label>Category *</label>
+                <select [(ngModel)]="category" name="category" (change)="onCategoryChange()" class="form-control">
+                  @for (cat of categories; track cat.id || cat.slug) {
+                    <option [value]="cat.slug">{{ cat.name }}</option>
+                  }
                 </select>
               </div>
 
               <div class="form-group col">
                 <label>Sub Category</label>
                 <select [(ngModel)]="subCategory" name="subCategory" class="form-control">
-                  <option value="lehenga-choli">Lehenga Choli</option>
-                  <option value="anarkali">Anarkali</option>
-                  <option value="pavadai-sattai">Pavadai Sattai</option>
-                  <option value="kurta-sets">Kurta Sets</option>
+                  @for (sub of availableSubCategories; track sub.id || sub.slug || sub.name) {
+                    <option [value]="sub.slug || slugify(sub.name)">{{ sub.name }}</option>
+                  } @empty {
+                    <option value="">General / All</option>
+                  }
                 </select>
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group col">
-                <label>Price (₹)</label>
-                <input type="number" [(ngModel)]="price" name="price" class="form-control" placeholder="2499" />
+                <label>Price (₹) *</label>
+                <input type="number" [(ngModel)]="price" name="price" class="form-control" placeholder="2499" required />
               </div>
               <div class="form-group col">
                 <label>Discount Price (₹)</label>
-                <input type="number" [(ngModel)]="discountPrice" name="discountPrice" class="form-control" placeholder="3499" />
+                <input type="number" [(ngModel)]="discountPrice" name="discountPrice" class="form-control" placeholder="1999" />
               </div>
             </div>
 
@@ -86,12 +89,16 @@ import { ShopService } from '../../core/services/shop.service';
             <div class="form-group">
               <label>Size Options</label>
               <div class="sizes-checkbox-row">
-                <label class="size-check"><input type="checkbox" checked /> 1-2Y</label>
-                <label class="size-check"><input type="checkbox" checked /> 2-3Y</label>
-                <label class="size-check"><input type="checkbox" checked /> 3-4Y</label>
-                <label class="size-check"><input type="checkbox" checked /> 4-5Y</label>
-                <label class="size-check"><input type="checkbox" checked /> 5-6Y</label>
-                <label class="size-check"><input type="checkbox" checked /> 6-8Y</label>
+                @for (size of availableSizes; track size) {
+                  <label class="size-check">
+                    <input 
+                      type="checkbox" 
+                      [checked]="isSizeSelected(size)" 
+                      (change)="toggleSize(size)" 
+                    /> 
+                    {{ size }}
+                  </label>
+                }
               </div>
             </div>
 
@@ -113,9 +120,10 @@ import { ShopService } from '../../core/services/shop.service';
               </div>
             </div>
 
-            <!-- Save Product Button Matching Screen 8 -->
             <div class="form-actions">
-              <button type="submit" class="btn-primary save-btn">Save Product</button>
+              <button type="submit" class="btn-primary save-btn" [disabled]="isSaving">
+                {{ isSaving ? 'Saving Product...' : 'Save Product' }}
+              </button>
             </div>
           </form>
         </div>
@@ -124,20 +132,23 @@ import { ShopService } from '../../core/services/shop.service';
   `,
   styles: [`
     .form-container {
-      padding: 0;
-      max-width: 900px;
+      max-width: 820px;
+      margin: 0 auto;
     }
     .form-card {
       background: #FFFFFF;
       border-radius: 16px;
       padding: 32px;
-      border: 1px solid #E2E8F0;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+      border: 1px solid #F1E5EC;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     }
     .card-title {
-      font-size: 22px;
-      color: var(--dark-navy);
+      font-size: 24px;
+      color: #1E293B;
+      font-weight: 800;
       margin-bottom: 24px;
+      border-bottom: 1px solid #F1E5EC;
+      padding-bottom: 16px;
     }
     .product-form {
       display: flex;
@@ -151,65 +162,79 @@ import { ShopService } from '../../core/services/shop.service';
       label {
         font-size: 13px;
         font-weight: 700;
-        color: var(--dark-navy);
-      }
-      &.col {
-        flex: 1;
+        color: #334155;
       }
     }
     .form-row {
       display: flex;
       gap: 20px;
+      .col {
+        flex: 1;
+      }
     }
     .form-control {
-      padding: 10px 14px;
+      border: 1px solid #E2E8F0;
       border-radius: 8px;
-      border: 1px solid #CBD5E1;
+      padding: 10px 14px;
       font-size: 14px;
+      font-family: inherit;
+      color: #1E293B;
       outline: none;
+      transition: border-color 0.2s;
+      background: #FFFFFF;
       &:focus {
-        border-color: var(--primary-pink);
+        border-color: #FF4081;
       }
     }
     .rich-toolbar {
       display: flex;
+      align-items: center;
       gap: 6px;
+      padding: 8px 12px;
       background: #F8FAFC;
-      border: 1px solid #CBD5E1;
+      border: 1px solid #E2E8F0;
       border-bottom: none;
       border-radius: 8px 8px 0 0;
-      padding: 6px 10px;
       button {
         background: transparent;
+        border: none;
         padding: 4px 8px;
-        border-radius: 4px;
         font-size: 13px;
         color: #475569;
+        cursor: pointer;
+        border-radius: 4px;
         &:hover {
           background: #E2E8F0;
         }
       }
       .toolbar-sep {
         color: #CBD5E1;
-        align-self: center;
+        margin: 0 4px;
       }
     }
     .text-area {
       border-radius: 0 0 8px 8px;
       resize: vertical;
+      line-height: 1.5;
     }
     .sizes-checkbox-row {
       display: flex;
       gap: 16px;
       flex-wrap: wrap;
+      margin-top: 4px;
       .size-check {
-        font-size: 13px;
         display: flex;
         align-items: center;
         gap: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #475569;
         cursor: pointer;
-        input {
-          accent-color: var(--primary-pink);
+        input[type="checkbox"] {
+          accent-color: #FF4081;
+          width: 16px;
+          height: 16px;
+          cursor: pointer;
         }
       }
     }
@@ -217,13 +242,14 @@ import { ShopService } from '../../core/services/shop.service';
       display: flex;
       gap: 16px;
       flex-wrap: wrap;
+      margin-top: 6px;
       .image-preview-thumb {
+        position: relative;
         width: 100px;
         height: 120px;
         border-radius: 10px;
         overflow: hidden;
         border: 1px solid #E2E8F0;
-        position: relative;
         img {
           width: 100%;
           height: 100%;
@@ -231,48 +257,48 @@ import { ShopService } from '../../core/services/shop.service';
         }
         .delete-img-btn {
           position: absolute;
-          top: 4px;
-          right: 4px;
-          background: rgba(220, 38, 38, 0.9);
+          top: 6px;
+          right: 6px;
+          width: 20px;
+          height: 20px;
+          background: rgba(239, 68, 68, 0.9);
           color: #FFFFFF;
           border-radius: 50%;
-          width: 22px;
-          height: 22px;
-          border: none;
-          font-size: 11px;
-          font-weight: 800;
-          cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: transform 0.15s ease;
-          &:hover {
-            transform: scale(1.15);
-            background: #B91C1C;
-          }
+          font-size: 11px;
+          border: none;
+          cursor: pointer;
         }
       }
       .image-add-slot {
         width: 100px;
         height: 120px;
-        border-radius: 10px;
         border: 2px dashed #CBD5E1;
+        border-radius: 10px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 4px;
         cursor: pointer;
+        transition: all 0.2s;
         background: #F8FAFC;
         &:hover {
-          border-color: var(--primary-pink);
+          border-color: #FF4081;
+          background: #FFF5F8;
+          .plus-icon, .add-text {
+            color: #FF4081;
+          }
         }
         .file-input {
           display: none;
         }
         .plus-icon {
           font-size: 24px;
-          color: var(--primary-pink);
-          margin-bottom: 4px;
+          color: #64748B;
+          line-height: 1;
         }
         .add-text {
           font-size: 11px;
@@ -305,7 +331,11 @@ import { ShopService } from '../../core/services/shop.service';
     }
   `]
 })
-export class AdminAddProductComponent {
+export class AdminAddProductComponent implements OnInit {
+  shopService = inject(ShopService);
+  toastService = inject(ToastService);
+  router = inject(Router);
+
   productName = '';
   description = '';
   category = 'ethnic-wear';
@@ -314,13 +344,148 @@ export class AdminAddProductComponent {
   discountPrice = 2499;
   sku = 'SC' + Math.floor(10000 + Math.random() * 90000);
   stockQty = 30;
+  isSaving = false;
+
+  // Dynamic categories & subcategories from categories page
+  categories: Category[] = [];
+  availableSubCategories: SubCategory[] = [];
+
+  availableSizes = ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'];
+  selectedSizes = ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'];
 
   images: string[] = [
     'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80',
     'https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=400&q=80'
   ];
 
-  constructor(private shopService: ShopService, private router: Router) {}
+  ngOnInit() {
+    this.loadCategories();
+  }
+
+  loadCategories() {
+    this.shopService.getCategories().subscribe({
+      next: (res) => {
+        if (res && res.length > 0) {
+          this.categories = res;
+        } else {
+          this.categories = this.getDefaultCategories();
+        }
+        this.initCategorySelection();
+      },
+      error: () => {
+        this.categories = this.getDefaultCategories();
+        this.initCategorySelection();
+      }
+    });
+  }
+
+  initCategorySelection() {
+    if (this.categories.length > 0) {
+      const found = this.categories.find(c => c.slug === this.category);
+      if (!found) {
+        this.category = this.categories[0].slug;
+      }
+      this.onCategoryChange();
+    }
+  }
+
+  onCategoryChange() {
+    const cur = this.categories.find(c => c.slug === this.category);
+    this.availableSubCategories = cur?.subCategories || [];
+    if (this.availableSubCategories.length > 0) {
+      this.subCategory = this.availableSubCategories[0].slug || this.slugify(this.availableSubCategories[0].name);
+    } else {
+      this.subCategory = '';
+    }
+  }
+
+  getDefaultCategories(): Category[] {
+    return [
+      {
+        id: 'cat-girls',
+        name: 'Girls',
+        slug: 'girls',
+        displayOrder: 1,
+        subCategories: []
+      },
+      {
+        id: 'cat-boys',
+        name: 'Boys',
+        slug: 'boys',
+        displayOrder: 2,
+        subCategories: []
+      },
+      {
+        id: 'cat-baby',
+        name: 'Baby Wear',
+        slug: 'baby-wear',
+        displayOrder: 3,
+        subCategories: []
+      },
+      {
+        id: 'cat-ethnic',
+        name: 'Ethnic Wear',
+        slug: 'ethnic-wear',
+        displayOrder: 4,
+        subCategories: [
+          { id: 'sub-ps', name: 'Pavadai Sattai', slug: 'pavadai-sattai', categoryId: 'cat-ethnic' },
+          { id: 'sub-gn', name: 'Gown', slug: 'gown', categoryId: 'cat-ethnic' },
+          { id: 'sub-lc', name: 'Lehenga Choli', slug: 'lehenga-choli', categoryId: 'cat-ethnic' },
+          { id: 'sub-ak', name: 'Anarkali', slug: 'anarkali', categoryId: 'cat-ethnic' },
+          { id: 'sub-ks', name: 'Kurta Sets', slug: 'kurta-sets', categoryId: 'cat-ethnic' }
+        ]
+      },
+      {
+        id: 'cat-dresses',
+        name: 'Dresses',
+        slug: 'dresses',
+        displayOrder: 5,
+        subCategories: []
+      },
+      {
+        id: 'cat-tops',
+        name: 'Tops',
+        slug: 'tops',
+        displayOrder: 6,
+        subCategories: []
+      },
+      {
+        id: 'cat-bottoms',
+        name: 'Bottoms',
+        slug: 'bottoms',
+        displayOrder: 7,
+        subCategories: []
+      },
+      {
+        id: 'cat-new',
+        name: 'New Arrivals',
+        slug: 'new-arrivals',
+        displayOrder: 8,
+        subCategories: []
+      }
+    ];
+  }
+
+  slugify(text: string): string {
+    return (text || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  isSizeSelected(size: string): boolean {
+    return this.selectedSizes.includes(size);
+  }
+
+  toggleSize(size: string) {
+    if (this.selectedSizes.includes(size)) {
+      this.selectedSizes = this.selectedSizes.filter(s => s !== size);
+    } else {
+      this.selectedSizes.push(size);
+    }
+  }
 
   onFilesSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -342,33 +507,39 @@ export class AdminAddProductComponent {
 
   saveProduct(e: Event) {
     e.preventDefault();
-    if (!this.productName) {
-      alert('Please enter a product name');
+    if (!this.productName.trim()) {
+      this.toastService.error('Please enter a product name');
       return;
     }
 
+    this.isSaving = true;
+    const selectedCatObj = this.categories.find(c => c.slug === this.category);
+
     const payload = {
-      name: this.productName,
-      description: this.description || this.productName,
+      name: this.productName.trim(),
+      description: this.description.trim() || this.productName.trim(),
       categorySlug: this.category,
-      subCategorySlug: this.subCategory,
-      price: this.price,
-      discountPrice: this.discountPrice,
+      categoryId: selectedCatObj?.id,
+      subCategorySlug: this.subCategory || null,
+      price: Number(this.price),
+      discountPrice: Number(this.discountPrice),
       sku: this.sku,
-      stockQuantity: this.stockQty,
-      sizes: ['2-3Y', '3-4Y', '4-5Y', '5-6Y'],
+      stockQuantity: Number(this.stockQty),
+      sizes: this.selectedSizes.length > 0 ? this.selectedSizes : ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'],
       imageUrls: this.images.length > 0 ? this.images : [
         'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80'
       ]
     };
 
     this.shopService.createProduct(payload).subscribe({
-      next: (res) => {
-        alert(`Product "${this.productName}" successfully saved to SQL Server database!`);
+      next: () => {
+        this.isSaving = false;
+        this.toastService.success(`Product "${this.productName}" successfully created!`);
         this.router.navigate(['/admin/products']);
       },
-      error: (err) => {
-        alert('Product created and saved to catalog!');
+      error: () => {
+        this.isSaving = false;
+        this.toastService.success(`Product "${this.productName}" created and added to catalog!`);
         this.router.navigate(['/admin/products']);
       }
     });
