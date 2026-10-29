@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router } from '@angular/router';
 import { HeaderComponent } from './shared/components/header.component';
 import { FooterComponent } from './shared/components/footer.component';
+import { ToastComponent } from './shared/components/toast.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent],
+  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent, ToastComponent],
   template: `
     @if (!isAdminRoute()) {
       <app-header />
@@ -20,6 +21,8 @@ import { FooterComponent } from './shared/components/footer.component';
     @if (!isAdminRoute()) {
       <app-footer />
     }
+
+    <app-toast />
   `,
   styles: [`
     :host {

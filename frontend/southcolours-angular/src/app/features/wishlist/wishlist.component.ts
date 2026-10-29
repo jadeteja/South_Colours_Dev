@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ShopService } from '../../core/services/shop.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Product } from '../../core/models/ecommerce.models';
 
 @Component({
@@ -219,6 +220,7 @@ import { Product } from '../../core/models/ecommerce.models';
 })
 export class WishlistComponent implements OnInit {
   shopService = inject(ShopService);
+  toastService = inject(ToastService);
   Math = Math;
   wishlistedProducts: Product[] = [];
 
@@ -258,6 +260,12 @@ export class WishlistComponent implements OnInit {
       originalPrice: product.originalPrice,
       imageUrl: primaryImg,
       quantity: 1
+    });
+
+    this.toastService.success(`${product.name} moved to Cart!`, {
+      title: 'Added to Bag',
+      actionText: 'View Cart',
+      actionUrl: '/cart'
     });
 
     this.removeItem(product.id);
