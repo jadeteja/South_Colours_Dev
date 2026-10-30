@@ -714,15 +714,72 @@ export interface DeliveryAddress {
     }
 
     @media (max-width: 768px) {
+      .checkout-page {
+        padding: 14px 14px 40px;
+      }
+      .checkout-heading {
+        font-size: 22px;
+        margin-bottom: 16px;
+      }
       .checkout-layout {
         grid-template-columns: 1fr;
+        gap: 20px;
       }
       .checkout-sidebar {
         position: static;
       }
+      .checkout-card {
+        padding: 18px 16px;
+        margin-bottom: 16px;
+      }
       .form-row {
         flex-direction: column;
         gap: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .checkout-page {
+        padding: 8px 10px 28px;
+      }
+      .checkout-heading {
+        font-size: 19px;
+        margin-bottom: 12px;
+      }
+      .checkout-card {
+        padding: 14px 12px;
+        margin-bottom: 12px;
+      }
+      .step-title {
+        font-size: 15px;
+      }
+      .add-addr-btn {
+        font-size: 12px;
+        padding: 4px 8px;
+      }
+      .address-option {
+        padding: 10px;
+        gap: 8px;
+      }
+      .person-name {
+        font-size: 13.5px;
+      }
+      .addr-text, .phone-text {
+        font-size: 12px;
+      }
+      .pay-method-option {
+        padding: 12px 10px;
+      }
+      .order-summary-box {
+        padding: 14px 12px;
+      }
+      .modal-dialog {
+        width: 95%;
+        margin: 10px;
+        border-radius: 14px;
+      }
+      .modal-header, .modal-body, .modal-footer {
+        padding: 12px 14px;
       }
     }
   `]

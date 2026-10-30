@@ -165,6 +165,9 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
     }
 
     @media (max-width: 600px) {
+      .confirmation-page {
+        padding: 16px 12px 32px;
+      }
       .confirmation-card {
         padding: 30px 18px;
         border-radius: 20px;

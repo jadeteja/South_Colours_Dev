@@ -216,6 +216,59 @@ import { Product } from '../../core/models/ecommerce.models';
         }
       }
     }
+
+    @media (max-width: 768px) {
+      .wishlist-page {
+        padding: 14px 14px 40px 14px;
+      }
+      .wishlist-header {
+        margin-bottom: 16px;
+        .page-title {
+          font-size: 22px;
+        }
+      }
+    }
+
+    @media (max-width: 480px) {
+      .wishlist-page {
+        padding: 8px 10px 28px 10px;
+      }
+      .wishlist-header {
+        margin-bottom: 12px;
+        .page-title {
+          font-size: 19px;
+        }
+      }
+      .wishlist-grid {
+        gap: 8px;
+      }
+      .wishlist-card {
+        .product-img-link {
+          height: 165px;
+        }
+        .product-details {
+          padding: 10px 8px;
+          .product-title {
+            font-size: 12.5px;
+            margin-bottom: 4px;
+          }
+          .price-row {
+            margin-bottom: 8px;
+            gap: 6px;
+            .current-price {
+              font-size: 14px;
+            }
+            .original-price {
+              font-size: 11.5px;
+            }
+          }
+          .btn-move-cart {
+            padding: 6px 8px;
+            font-size: 12px;
+          }
+        }
+      }
+    }
   `]
 })
 export class WishlistComponent implements OnInit {

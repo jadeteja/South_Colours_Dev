@@ -311,32 +311,78 @@ import { ShopService } from '../../core/services/shop.service';
     }
 
     @media (max-width: 900px) {
+      .cart-page {
+        padding: 16px 16px 40px;
+      }
       .cart-layout {
         grid-template-columns: 1fr;
-        gap: 24px;
+        gap: 20px;
       }
     }
 
     @media (max-width: 540px) {
-      .cart-card {
-        flex-direction: column;
-        align-items: flex-start;
-        position: relative;
+      .cart-page {
+        padding: 8px 12px 30px;
+      }
+      .cart-heading {
+        font-size: 20px;
+        margin-bottom: 12px;
+      }
+      .items-header {
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+      }
+      .items-list {
         gap: 12px;
       }
+      .cart-card {
+        padding: 12px;
+        gap: 12px;
+        align-items: flex-start;
+      }
       .cart-thumb {
-        width: 100%;
-        height: 180px;
+        width: 72px;
+        height: 86px;
+        flex-shrink: 0;
+        border-radius: 8px;
+      }
+      .item-details {
+        .item-name {
+          font-size: 14px;
+        }
+        .item-meta {
+          font-size: 12px;
+          margin-bottom: 4px;
+        }
+        .item-price {
+          font-size: 15px;
+        }
       }
       .stepper-wrap {
-        width: 100%;
-        justify-content: space-between;
+        gap: 10px;
       }
       .coupon-input-group {
-        flex-direction: column;
-        .apply-btn {
-          padding: 10px;
+        gap: 8px;
+        input {
+          padding: 8px 12px;
+          font-size: 12px;
         }
+        .apply-btn {
+          padding: 0 14px;
+          font-size: 12px;
+        }
+      }
+      .summary-card {
+        padding: 16px;
+        margin-bottom: 14px;
+      }
+      .box-title {
+        font-size: 15px;
+        margin-bottom: 12px;
+      }
+      .checkout-cta-btn {
+        padding: 12px 0;
+        font-size: 15px;
       }
     }
   `]

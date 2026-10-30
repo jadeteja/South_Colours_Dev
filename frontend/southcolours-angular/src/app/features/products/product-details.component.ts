@@ -880,6 +880,7 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
     }
     .color-options {
       display: flex;
+      flex-wrap: wrap;
       gap: 12px;
       margin-top: 10px;
       .color-choice {
@@ -1641,45 +1642,145 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
     }
 
     @media (max-width: 768px) {
+      .details-page {
+        padding: 12px 16px 40px;
+      }
+      .breadcrumb {
+        font-size: 12px;
+        margin-bottom: 12px;
+        overflow-x: auto;
+        white-space: nowrap;
+        gap: 6px;
+      }
       .details-layout {
         grid-template-columns: 1fr;
-        gap: 24px;
+        gap: 16px;
       }
       .gallery-wrapper {
         flex-direction: column-reverse;
+        gap: 10px;
       }
       .thumbnails-col {
         flex-direction: row;
         overflow-x: auto;
-        padding-bottom: 6px;
+        gap: 8px;
+        padding-bottom: 4px;
         .thumb-btn {
-          width: 60px;
-          height: 70px;
+          width: 54px;
+          height: 62px;
           flex-shrink: 0;
+          border-radius: 8px;
         }
       }
       .main-image-card {
-        height: 380px;
+        height: 290px;
+        max-height: 40vh;
+        border-radius: 16px;
       }
       .product-title {
-        font-size: 22px;
+        font-size: 20px;
+        margin-bottom: 6px;
+        line-height: 1.3;
       }
-      .price-box .selling-price {
-        font-size: 24px;
+      .rating-row {
+        margin-bottom: 8px;
+        gap: 6px;
+      }
+      .price-box {
+        margin-bottom: 12px;
+        gap: 10px;
+        .selling-price {
+          font-size: 24px;
+        }
+        .original-price {
+          font-size: 15px;
+        }
+        .badge-discount {
+          font-size: 11px;
+          padding: 2px 7px;
+        }
+      }
+      .product-short-desc {
+        font-size: 13.5px;
+        line-height: 1.45;
+        margin-bottom: 14px;
+      }
+      .selector-section {
+        margin-bottom: 14px;
+        .selector-header {
+          margin-bottom: 6px;
+        }
+      }
+      .size-pills {
+        gap: 8px;
+        .size-pill {
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+      }
+      .color-options {
+        margin-top: 6px;
+        gap: 8px;
+        flex-wrap: wrap;
+        .color-choice {
+          padding: 5px 12px;
+          font-size: 12px;
+        }
+      }
+      .quantity-section {
+        margin-bottom: 16px;
+        gap: 14px;
+        .stepper {
+          .step-btn {
+            width: 32px;
+            height: 32px;
+          }
+          .qty-num {
+            padding: 0 10px;
+            font-size: 13px;
+          }
+        }
       }
       .action-buttons-row {
-        flex-direction: column;
-        gap: 12px;
+        flex-direction: row;
+        gap: 10px;
+        margin-bottom: 16px;
         .add-cart-btn, .buy-now-btn {
-          width: 100%;
+          flex: 1;
+          width: auto;
+          padding: 12px 10px;
+          font-size: 14.5px;
+          min-height: 44px;
+          white-space: nowrap;
         }
       }
       .trust-badges-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 12px 0;
+        margin-bottom: 18px;
+        .trust-badge {
+          gap: 3px;
+          .badge-icon {
+            font-size: 18px;
+          }
+          .badge-text {
+            font-size: 10.5px;
+            line-height: 1.2;
+            word-break: break-word;
+          }
+        }
       }
-      .specs-section .specs-tabs {
-        gap: 14px;
+      .specs-section {
+        margin-top: 6px;
+        .specs-tabs {
+          gap: 14px;
+          margin-bottom: 14px;
+        }
+        .tab-btn {
+          font-size: 13px;
+          padding-bottom: 8px;
+        }
       }
       .reviews-header-card {
         flex-direction: column;
@@ -1720,15 +1821,215 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
     }
 
     @media (max-width: 480px) {
+      .details-page {
+        padding: 8px 12px 30px;
+      }
+      .breadcrumb {
+        font-size: 11px;
+        margin-bottom: 8px;
+        gap: 5px;
+      }
+      .details-layout {
+        gap: 12px;
+      }
+      .gallery-wrapper {
+        gap: 8px;
+      }
       .main-image-card {
-        height: 300px;
+        height: 235px;
+        max-height: 35vh;
+        border-radius: 14px;
+        .zoom-hint-badge {
+          font-size: 9.5px;
+          padding: 4px 8px;
+          bottom: 8px;
+          left: 8px;
+        }
+        .wishlist-float {
+          width: 34px;
+          height: 34px;
+          top: 10px;
+          right: 10px;
+          svg {
+            width: 18px;
+            height: 18px;
+          }
+        }
+        .zoom-float-btn {
+          width: 32px;
+          height: 32px;
+          bottom: 8px;
+          right: 8px;
+          svg {
+            width: 15px;
+            height: 15px;
+          }
+        }
+      }
+      .thumbnails-col {
+        gap: 8px;
+        padding-bottom: 4px;
+        .thumb-btn {
+          width: 46px;
+          height: 54px;
+          border-radius: 7px;
+        }
+      }
+      .product-title {
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+      .rating-row {
+        margin-bottom: 6px;
+        gap: 5px;
+        .stars {
+          font-size: 13px;
+        }
+        .rating-val {
+          font-size: 11.5px;
+        }
       }
       .price-box {
+        margin-bottom: 8px;
+        gap: 8px;
         flex-wrap: wrap;
+        .selling-price {
+          font-size: 21px;
+        }
+        .original-price {
+          font-size: 14px;
+        }
+        .badge-discount {
+          font-size: 10.5px;
+          padding: 2px 6px;
+        }
       }
-      .size-pills .size-pill {
-        padding: 6px 12px;
+      .product-short-desc {
+        font-size: 12.5px;
+        line-height: 1.4;
+        margin-bottom: 10px;
+      }
+      .selector-section {
+        margin-bottom: 10px;
+        .selector-header {
+          margin-bottom: 4px;
+          .label {
+            font-size: 13px;
+          }
+          .size-guide-btn {
+            font-size: 11.5px;
+          }
+        }
+      }
+      .size-pills {
+        gap: 5px;
+        .size-pill {
+          padding: 5px 9px;
+          font-size: 11.5px;
+          border-radius: 6px;
+        }
+      }
+      .color-options {
+        margin-top: 4px;
+        gap: 6px;
+        .color-choice {
+          padding: 4px 9px;
+          font-size: 11.5px;
+          border-radius: 6px;
+          gap: 5px;
+          .color-circle {
+            width: 13px;
+            height: 13px;
+          }
+        }
+      }
+      .quantity-section {
+        margin-bottom: 12px;
+        gap: 10px;
+        .label {
+          font-size: 13px;
+        }
+        .stepper {
+          .step-btn {
+            width: 28px;
+            height: 28px;
+            font-size: 14px;
+          }
+          .qty-num {
+            padding: 0 8px;
+            font-size: 12.5px;
+          }
+        }
+      }
+      .action-buttons-row {
+        flex-direction: row;
+        gap: 8px;
+        margin-bottom: 12px;
+        .add-cart-btn, .buy-now-btn {
+          flex: 1;
+          width: auto;
+          padding: 10px 4px;
+          font-size: 13px;
+          min-height: 42px;
+          white-space: nowrap;
+        }
+      }
+      .trust-badges-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        padding: 8px 0;
+        margin-bottom: 14px;
+        .trust-badge {
+          gap: 2px;
+          .badge-icon {
+            font-size: 16px;
+          }
+          .badge-text {
+            font-size: 9px;
+            line-height: 1.15;
+          }
+        }
+      }
+      .specs-section {
+        .specs-tabs {
+          gap: 10px;
+          margin-bottom: 12px;
+        }
+        .tab-btn {
+          font-size: 12px;
+          padding-bottom: 6px;
+        }
+        .specs-table td {
+          padding: 6px 4px;
+          font-size: 12px;
+        }
+      }
+    }
+
+    @media (max-width: 360px) {
+      .details-page {
+        padding: 6px 8px 24px;
+      }
+      .main-image-card {
+        height: 205px;
+      }
+      .thumbnails-col .thumb-btn {
+        width: 42px;
+        height: 48px;
+      }
+      .product-title {
+        font-size: 16.5px;
+      }
+      .price-box .selling-price {
+        font-size: 19px;
+      }
+      .action-buttons-row .add-cart-btn, 
+      .action-buttons-row .buy-now-btn {
         font-size: 12px;
+        padding: 9px 2px;
+      }
+      .trust-badges-grid .trust-badge .badge-text {
+        font-size: 8.5px;
       }
     }
   `]

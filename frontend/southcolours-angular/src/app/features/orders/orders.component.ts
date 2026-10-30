@@ -313,9 +313,12 @@ import { RouterModule } from '@angular/router';
     }
 
     @media (max-width: 900px) {
+      .account-page {
+        padding: 14px 14px 40px;
+      }
       .account-layout {
         grid-template-columns: 1fr;
-        gap: 24px;
+        gap: 20px;
       }
       .nav-list {
         flex-direction: row;
@@ -328,6 +331,16 @@ import { RouterModule } from '@angular/router';
     }
 
     @media (max-width: 600px) {
+      .account-page {
+        padding: 8px 10px 28px;
+      }
+      .sidebar-heading, .orders-heading {
+        font-size: 18px;
+        margin-bottom: 12px;
+      }
+      .account-card, .order-card {
+        padding: 14px 12px;
+      }
       .status-tabs {
         overflow-x: auto;
         white-space: nowrap;
