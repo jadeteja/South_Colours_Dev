@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, Router } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { HeaderComponent } from './shared/components/header.component';
 import { FooterComponent } from './shared/components/footer.component';
 import { ToastComponent } from './shared/components/toast.component';
@@ -38,7 +39,13 @@ import { WhatsappButtonComponent } from './shared/components/whatsapp-button.com
   `]
 })
 export class AppComponent {
-  constructor(private router: Router) {}
+  constructor(private router: Router) {
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      });
+  }
 
   isAdminRoute(): boolean {
     return this.router.url.startsWith('/admin');

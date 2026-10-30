@@ -44,7 +44,7 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
           <div class="product-info-panel">
             <h1 class="product-title">{{ product.name }}</h1>
             
-            <div class="rating-row" (click)="setTab('reviews')" role="button" tabindex="0" title="Click to view reviews">
+            <div class="rating-row" (click)="setTab('reviews', true)" role="button" tabindex="0" title="Click to view reviews">
               <span class="stars">★★★★★</span>
               <span class="rating-val">({{ reviews.length || product.reviewCount }} reviews)</span>
             </div>
@@ -1338,16 +1338,20 @@ export class ProductDetailsComponent implements OnInit {
   };
 
   ngOnInit() {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     this.route.params.subscribe(params => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       const slug = params['slug'] || 'pink-lehenga-set';
       this.shopService.getProductBySlug(slug).subscribe({
         next: (p) => {
           this.product = p;
           this.selectedImage = p.images[0]?.imageUrl || '';
           this.loadReviews(p.id);
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         },
         error: () => {
           this.loadReviews();
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         }
       });
     });
@@ -1406,12 +1410,14 @@ export class ProductDetailsComponent implements OnInit {
     return '★'.repeat(r) + '☆'.repeat(5 - r);
   }
 
-  setTab(tab: 'details' | 'specs' | 'size-chart' | 'reviews') {
+  setTab(tab: 'details' | 'specs' | 'size-chart' | 'reviews', scrollIntoView = false) {
     this.activeTab = tab;
-    // Scroll smoothly to specs tabs if clicked from top (e.g., rating row)
-    const el = document.getElementById('product-tabs-section');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Scroll smoothly to specs tabs if explicitly requested (e.g., clicking rating row)
+    if (scrollIntoView) {
+      const el = document.getElementById('product-tabs-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   }
 
