@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
@@ -30,11 +30,41 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
                 </button>
               }
             </div>
-            <div class="main-image-card">
-              <img [src]="selectedImage" [alt]="product.name" class="main-image" />
-              <button class="wishlist-float" (click)="shopService.toggleWishlist(product.id)" aria-label="Toggle wishlist">
+            <div 
+              class="main-image-card"
+              (mousemove)="onImageMouseMove($event)"
+              (mouseleave)="onImageMouseLeave()"
+              (click)="openZoomModal($event)"
+              title="Click to view full screen zoom">
+              <img 
+                [src]="selectedImage" 
+                [alt]="product.name" 
+                class="main-image"
+                [class.zoomed]="isHoverZoomed"
+                [style.transform-origin]="zoomOrigin" />
+
+              <div class="zoom-hint-badge" [class.hidden]="isHoverZoomed">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  <line x1="11" y1="8" x2="11" y2="14"></line>
+                  <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+                <span>Hover to zoom • Click to expand</span>
+              </div>
+
+              <button class="wishlist-float" (click)="onWishlistClick($event)" aria-label="Toggle wishlist" title="Wishlist">
                 <svg width="22" height="22" viewBox="0 0 24 24" [attr.fill]="shopService.isWishlisted(product.id) ? '#FF4081' : 'none'" stroke="#FF4081" stroke-width="2">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+              </button>
+
+              <button class="zoom-float-btn" (click)="openZoomModal($event)" aria-label="Zoom image" title="Full screen zoom">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  <line x1="11" y1="8" x2="11" y2="14"></line>
+                  <line x1="8" y1="11" x2="14" y2="11"></line>
                 </svg>
               </button>
             </div>
@@ -513,6 +543,96 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
             </div>
           </div>
         }
+
+        <!-- High-Resolution Image Zoom Modal -->
+        @if (showZoomModal && product) {
+          <div class="zoom-lightbox-backdrop" (click)="closeZoomModal()">
+            <div class="zoom-lightbox-dialog" (click)="$event.stopPropagation()">
+              
+              <!-- Lightbox Header -->
+              <div class="zoom-lightbox-header">
+                <div class="lightbox-title-box">
+                  <h3 class="lightbox-product-name">{{ product.name }}</h3>
+                  <span class="lightbox-img-counter">{{ getCurrentImageIndex() }} / {{ product.images.length || 1 }}</span>
+                </div>
+
+                <div class="lightbox-controls">
+                  <button type="button" class="ctrl-btn" (click)="zoomOut($event)" [disabled]="modalZoomLevel <= 1" title="Zoom Out">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      <line x1="8" y1="11" x2="14" y2="11"></line>
+                    </svg>
+                  </button>
+
+                  <span class="ctrl-zoom-badge">{{ (modalZoomLevel * 100).toFixed(0) }}%</span>
+
+                  <button type="button" class="ctrl-btn" (click)="zoomIn($event)" [disabled]="modalZoomLevel >= 3" title="Zoom In">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      <line x1="11" y1="8" x2="11" y2="14"></line>
+                      <line x1="8" y1="11" x2="14" y2="11"></line>
+                    </svg>
+                  </button>
+
+                  <button type="button" class="ctrl-btn" (click)="resetZoom($event)" title="Reset Zoom">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                      <path d="M3 3v5h5"></path>
+                    </svg>
+                  </button>
+
+                  <button type="button" class="ctrl-btn close-btn" (click)="closeZoomModal()" aria-label="Close" title="Close (Esc)">
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <!-- Main Stage with Arrows -->
+              <div class="zoom-lightbox-stage">
+                @if (product.images.length > 1) {
+                  <button type="button" class="stage-arrow-btn prev-arrow" (click)="prevImage($event)" aria-label="Previous image">
+                    ‹
+                  </button>
+                }
+
+                <div class="stage-viewport" (click)="toggleModalZoom($event)" [class.can-zoom-in]="modalZoomLevel === 1" [class.can-zoom-out]="modalZoomLevel > 1" title="Click to zoom in / out">
+                  <img 
+                    [src]="selectedImage" 
+                    [alt]="product.name" 
+                    class="stage-img"
+                    [style.transform]="'scale(' + modalZoomLevel + ')'" 
+                  />
+                </div>
+
+                @if (product.images.length > 1) {
+                  <button type="button" class="stage-arrow-btn next-arrow" (click)="nextImage($event)" aria-label="Next image">
+                    ›
+                  </button>
+                }
+              </div>
+
+              <!-- Thumbnails Selector Footer -->
+              @if (product.images.length > 1) {
+                <div class="zoom-lightbox-footer">
+                  <div class="lightbox-thumbs-row">
+                    @for (img of product.images; track img.id) {
+                      <button 
+                        type="button" 
+                        class="thumb-strip-btn" 
+                        [class.active]="selectedImage === img.imageUrl" 
+                        (click)="selectedImage = img.imageUrl">
+                        <img [src]="img.imageUrl" [alt]="product.name" />
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+
+            </div>
+          </div>
+        }
       </div>
     }
   `,
@@ -576,11 +696,46 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
       overflow: hidden;
       border: 1px solid var(--border-pink);
       background: #FFF5F8;
+      cursor: zoom-in;
+
       .main-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transform-origin: center center;
+        will-change: transform;
+
+        &.zoomed {
+          transform: scale(2.2);
+          transition: transform 0.08s ease-out;
+        }
       }
+
+      .zoom-hint-badge {
+        position: absolute;
+        bottom: 14px;
+        left: 14px;
+        background: rgba(24, 38, 59, 0.78);
+        backdrop-filter: blur(6px);
+        color: #FFFFFF;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        pointer-events: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        transition: opacity 0.2s ease;
+        z-index: 4;
+
+        &.hidden {
+          opacity: 0;
+        }
+      }
+
       .wishlist-float {
         position: absolute;
         top: 16px;
@@ -593,6 +748,35 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
         align-items: center;
         justify-content: center;
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 5;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+        &:hover {
+          transform: scale(1.1);
+        }
+      }
+
+      .zoom-float-btn {
+        position: absolute;
+        bottom: 14px;
+        right: 14px;
+        width: 38px;
+        height: 38px;
+        background: #FFFFFF;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--dark-navy);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        z-index: 5;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        &:hover {
+          background: var(--primary-pink);
+          color: #FFFFFF;
+          transform: scale(1.1);
+        }
       }
     }
     .product-info-panel {
@@ -1223,6 +1407,227 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
       to { transform: scale(1); opacity: 1; }
     }
 
+    /* High-Resolution Zoom Lightbox */
+    .zoom-lightbox-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 100000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .zoom-lightbox-dialog {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .zoom-lightbox-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 28px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.7);
+
+      .lightbox-title-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .lightbox-product-name {
+        color: #FFFFFF;
+        font-size: 17px;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .lightbox-img-counter {
+        background: rgba(255, 255, 255, 0.15);
+        color: #FFFFFF;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 12px;
+      }
+
+      .lightbox-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .ctrl-btn {
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: #FFFFFF;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.25);
+          transform: translateY(-1px);
+        }
+
+        &:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+
+        &.close-btn {
+          font-size: 18px;
+          font-weight: 700;
+          background: rgba(255, 64, 129, 0.2);
+          border-color: rgba(255, 64, 129, 0.4);
+          color: #FF4081;
+          margin-left: 6px;
+          &:hover {
+            background: #FF4081;
+            color: #FFFFFF;
+          }
+        }
+      }
+
+      .ctrl-zoom-badge {
+        color: #FFFFFF;
+        font-size: 13px;
+        font-weight: 700;
+        min-width: 44px;
+        text-align: center;
+      }
+    }
+
+    .zoom-lightbox-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 16px;
+
+      .stage-arrow-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #FFFFFF;
+        font-size: 32px;
+        font-weight: 300;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.2s ease;
+        line-height: 1;
+
+        &:hover {
+          background: var(--primary-pink);
+          border-color: var(--primary-pink);
+          transform: translateY(-50%) scale(1.1);
+        }
+
+        &.prev-arrow { left: 24px; }
+        &.next-arrow { right: 24px; }
+      }
+
+      .stage-viewport {
+        max-width: 86vw;
+        max-height: 72vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+
+        &.can-zoom-in { cursor: zoom-in; }
+        &.can-zoom-out { cursor: zoom-out; }
+      }
+
+      .stage-img {
+        max-width: 100%;
+        max-height: 72vh;
+        object-fit: contain;
+        border-radius: 12px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        transform-origin: center center;
+        user-select: none;
+      }
+    }
+
+    .zoom-lightbox-footer {
+      padding: 14px 20px 20px;
+      display: flex;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.7);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+
+      .lightbox-thumbs-row {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding: 4px;
+        max-width: 100%;
+
+        &::-webkit-scrollbar {
+          height: 4px;
+        }
+        &::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 4px;
+        }
+      }
+
+      .thumb-strip-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        border: 2px solid transparent;
+        overflow: hidden;
+        background: transparent;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        padding: 0;
+
+        &.active {
+          border-color: var(--primary-pink);
+          opacity: 1;
+          transform: scale(1.05);
+        }
+
+        &:hover {
+          opacity: 1;
+        }
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+    }
+
     @media (max-width: 1024px) {
       .details-layout {
         gap: 28px;
@@ -1281,6 +1686,37 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
         align-items: flex-start;
         gap: 12px;
       }
+      .zoom-lightbox-header {
+        padding: 12px 16px;
+        .lightbox-product-name {
+          font-size: 14px;
+          max-width: 140px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+      .zoom-lightbox-stage {
+        padding: 8px;
+        .stage-arrow-btn {
+          width: 38px;
+          height: 38px;
+          font-size: 24px;
+          &.prev-arrow { left: 8px; }
+          &.next-arrow { right: 8px; }
+        }
+        .stage-viewport {
+          max-width: 95vw;
+          max-height: 65vh;
+        }
+        .stage-img {
+          max-height: 65vh;
+        }
+      }
+      .zoom-hint-badge {
+        font-size: 10px;
+        padding: 4px 8px;
+      }
     }
 
     @media (max-width: 480px) {
@@ -1317,6 +1753,106 @@ export class ProductDetailsComponent implements OnInit {
   // Size chart state
   sizeUnit: 'in' | 'cm' = 'in';
   showSizeGuideModal = false;
+
+  // Image Zoom state
+  isHoverZoomed = false;
+  zoomOrigin = '50% 50%';
+  showZoomModal = false;
+  modalZoomLevel = 1.5;
+
+  onImageMouseMove(event: MouseEvent) {
+    const card = event.currentTarget as HTMLElement;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
+    this.zoomOrigin = `${x.toFixed(1)}% ${y.toFixed(1)}%`;
+    this.isHoverZoomed = true;
+  }
+
+  onImageMouseLeave() {
+    this.isHoverZoomed = false;
+    this.zoomOrigin = '50% 50%';
+  }
+
+  onWishlistClick(event: MouseEvent) {
+    event.stopPropagation();
+    if (this.product) {
+      this.shopService.toggleWishlist(this.product.id);
+    }
+  }
+
+  openZoomModal(event?: MouseEvent) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.modalZoomLevel = 1.5;
+    this.showZoomModal = true;
+  }
+
+  closeZoomModal() {
+    this.showZoomModal = false;
+    this.modalZoomLevel = 1;
+  }
+
+  zoomIn(event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    if (this.modalZoomLevel < 3) {
+      this.modalZoomLevel = +(this.modalZoomLevel + 0.5).toFixed(1);
+    }
+  }
+
+  zoomOut(event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    if (this.modalZoomLevel > 1) {
+      this.modalZoomLevel = +(this.modalZoomLevel - 0.5).toFixed(1);
+    }
+  }
+
+  resetZoom(event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.modalZoomLevel = 1;
+  }
+
+  toggleModalZoom(event: MouseEvent) {
+    event.stopPropagation();
+    this.modalZoomLevel = this.modalZoomLevel === 1 ? 2 : 1;
+  }
+
+  nextImage(event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    if (!this.product || !this.product.images.length) return;
+    const currentIndex = this.product.images.findIndex(img => img.imageUrl === this.selectedImage);
+    const nextIndex = (currentIndex + 1) % this.product.images.length;
+    this.selectedImage = this.product.images[nextIndex].imageUrl;
+  }
+
+  prevImage(event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    if (!this.product || !this.product.images.length) return;
+    const currentIndex = this.product.images.findIndex(img => img.imageUrl === this.selectedImage);
+    const prevIndex = (currentIndex - 1 + this.product.images.length) % this.product.images.length;
+    this.selectedImage = this.product.images[prevIndex].imageUrl;
+  }
+
+  getCurrentImageIndex(): number {
+    if (!this.product || !this.product.images.length) return 1;
+    const idx = this.product.images.findIndex(img => img.imageUrl === this.selectedImage);
+    return idx >= 0 ? idx + 1 : 1;
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent) {
+    if (this.showZoomModal) {
+      if (event.key === 'Escape') {
+        this.closeZoomModal();
+      } else if (event.key === 'ArrowRight') {
+        this.nextImage();
+      } else if (event.key === 'ArrowLeft') {
+        this.prevImage();
+      }
+    }
+  }
 
   sizeChartData = [
     { size: '1-2Y', chestIn: '20', waistIn: '19', lengthIn: '22', heightCm: '80 - 86 cm', chestCm: '51', waistCm: '48', lengthCm: '56' },
