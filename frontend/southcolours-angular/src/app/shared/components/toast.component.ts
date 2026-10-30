@@ -55,7 +55,7 @@ import { ToastService } from '../../core/services/toast.service';
   styles: [`
     .toast-container {
       position: fixed;
-      bottom: 24px;
+      bottom: 92px;
       right: 24px;
       z-index: 99999;
       display: flex;
@@ -177,7 +177,7 @@ import { ToastService } from '../../core/services/toast.service';
 
     @media (max-width: 480px) {
       .toast-container {
-        bottom: 16px;
+        bottom: 84px;
         right: 16px;
         left: 16px;
         width: auto;
