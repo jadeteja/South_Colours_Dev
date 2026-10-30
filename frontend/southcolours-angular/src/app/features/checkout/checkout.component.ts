@@ -1,12 +1,26 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ShopService } from '../../core/services/shop.service';
+import { ToastService } from '../../core/services/toast.service';
+
+export interface DeliveryAddress {
+  id: string;
+  name: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  pinCode: string;
+  type?: string;
+}
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <div class="container checkout-page">
       <h1 class="checkout-heading">Checkout</h1>
@@ -18,32 +32,47 @@ import { ShopService } from '../../core/services/shop.service';
           <div class="checkout-card">
             <div class="card-title-row">
               <h2 class="step-title"><span class="step-num">1.</span> Delivery Address</h2>
-              <button class="add-addr-btn">+ Add New Address</button>
+              <button type="button" class="add-addr-btn" (click)="openAddAddressModal()">
+                + Add New Address
+              </button>
             </div>
 
             <div class="addresses-list">
-              <!-- Selected Address matching Screen 5 (Priya Sharma, Bangalore) -->
-              <label class="address-option selected">
-                <input type="radio" name="address" checked />
-                <div class="address-body">
-                  <div class="addr-header">
-                    <span class="person-name">Priya Sharma</span>
-                    <button class="edit-link">Edit</button>
+              @for (addr of addresses; track addr.id) {
+                <label 
+                  class="address-option" 
+                  [class.selected]="selectedAddressId === addr.id"
+                  (click)="selectAddress(addr.id)">
+                  <input 
+                    type="radio" 
+                    name="address" 
+                    [value]="addr.id" 
+                    [checked]="selectedAddressId === addr.id" 
+                    (change)="selectAddress(addr.id)" 
+                  />
+                  <div class="address-body">
+                    <div class="addr-header">
+                      <div class="name-block">
+                        <span class="person-name">{{ addr.name }}</span>
+                        @if (addr.type) {
+                          <span class="addr-type-pill">{{ addr.type }}</span>
+                        }
+                      </div>
+                      <div class="addr-actions">
+                        <button type="button" class="edit-link" (click)="openEditAddressModal(addr, $event)">Edit</button>
+                        @if (addresses.length > 1) {
+                          <button type="button" class="delete-link" (click)="deleteAddress(addr.id, $event)">Delete</button>
+                        }
+                      </div>
+                    </div>
+                    <p class="addr-text">
+                      {{ addr.addressLine1 }}{{ addr.addressLine2 ? ', ' + addr.addressLine2 : '' }}<br>
+                      {{ addr.city }}, {{ addr.state }} - {{ addr.pinCode }}
+                    </p>
+                    <p class="phone-text">📞 {{ addr.phone }}</p>
                   </div>
-                  <p class="addr-text">123, Green Park, Bangalore<br>Karnataka - 560001</p>
-                  <p class="phone-text">9876543210</p>
-                </div>
-              </label>
-
-              <!-- Secondary Address -->
-              <label class="address-option">
-                <input type="radio" name="address" />
-                <div class="address-body">
-                  <span class="person-name">Office</span>
-                  <p class="addr-text">ABC Tech Park, Whitefield<br>Bangalore - 560066</p>
-                  <p class="phone-text">9123456780</p>
-                </div>
-              </label>
+                </label>
+              }
             </div>
           </div>
 
@@ -77,8 +106,8 @@ import { ShopService } from '../../core/services/shop.service';
               </label>
             </div>
 
-            <button class="btn-primary place-order-btn" (click)="placeOrder()">
-              Place Order & Pay ₹ {{ shopService.cartTotal() | number }}
+            <button class="btn-primary place-order-btn" (click)="placeOrder()" [disabled]="isProcessing">
+              {{ isProcessing ? 'Processing Order...' : 'Place Order & Pay ₹ ' + (shopService.cartTotal() | number) }}
             </button>
           </div>
         </div>
@@ -98,6 +127,8 @@ import { ShopService } from '../../core/services/shop.service';
                   </div>
                   <span class="price">₹ {{ item.price | number }}</span>
                 </div>
+              } @empty {
+                <p class="empty-cart-note">Your cart is empty.</p>
               }
             </div>
 
@@ -127,6 +158,141 @@ import { ShopService } from '../../core/services/shop.service';
           </div>
         </aside>
       </div>
+
+      <!-- Add / Edit Delivery Address Modal Dialog -->
+      @if (showAddressModal) {
+        <div class="modal-backdrop" (click)="closeAddressModal()">
+          <div class="modal-dialog" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <div>
+                <h3 class="modal-title">{{ isEditingAddress ? 'Edit Delivery Address' : 'Add New Delivery Address' }}</h3>
+                <p class="modal-sub">Ensure smooth delivery by entering complete address details</p>
+              </div>
+              <button type="button" class="modal-close-btn" (click)="closeAddressModal()" aria-label="Close modal">✕</button>
+            </div>
+
+            <form (submit)="saveAddress($event)" class="modal-body">
+              <div class="form-row">
+                <div class="form-group col">
+                  <label>Full Name *</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="addressForm.name" 
+                    name="name" 
+                    placeholder="e.g. Priya Sharma" 
+                    class="form-control" 
+                    required 
+                  />
+                </div>
+                <div class="form-group col">
+                  <label>Mobile Number *</label>
+                  <input 
+                    type="tel" 
+                    [(ngModel)]="addressForm.phone" 
+                    name="phone" 
+                    placeholder="10-digit mobile number" 
+                    class="form-control" 
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Flat, House No., Building, Street *</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="addressForm.addressLine1" 
+                  name="addressLine1" 
+                  placeholder="e.g. 123, Green Park Apartments" 
+                  class="form-control" 
+                  required 
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Area, Colony, Landmark (Optional)</label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="addressForm.addressLine2" 
+                  name="addressLine2" 
+                  placeholder="e.g. Near Metro Station, Indiranagar" 
+                  class="form-control" 
+                />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col">
+                  <label>City *</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="addressForm.city" 
+                    name="city" 
+                    placeholder="e.g. Bangalore" 
+                    class="form-control" 
+                    required 
+                  />
+                </div>
+                <div class="form-group col">
+                  <label>State *</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="addressForm.state" 
+                    name="state" 
+                    placeholder="e.g. Karnataka" 
+                    class="form-control" 
+                    required 
+                  />
+                </div>
+                <div class="form-group col">
+                  <label>PIN Code *</label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="addressForm.pinCode" 
+                    name="pinCode" 
+                    placeholder="e.g. 560001" 
+                    class="form-control" 
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Address Type</label>
+                <div class="type-pill-group">
+                  <button 
+                    type="button" 
+                    class="type-pill" 
+                    [class.selected]="addressForm.type === 'Home'" 
+                    (click)="addressForm.type = 'Home'">
+                    🏠 Home
+                  </button>
+                  <button 
+                    type="button" 
+                    class="type-pill" 
+                    [class.selected]="addressForm.type === 'Office'" 
+                    (click)="addressForm.type = 'Office'">
+                    🏢 Office / Work
+                  </button>
+                  <button 
+                    type="button" 
+                    class="type-pill" 
+                    [class.selected]="addressForm.type === 'Other'" 
+                    (click)="addressForm.type = 'Other'">
+                    📍 Other
+                  </button>
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn-cancel" (click)="closeAddressModal()">Cancel</button>
+                <button type="submit" class="btn-primary">
+                  {{ isEditingAddress ? 'Update Address' : 'Save & Deliver Here' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -139,6 +305,7 @@ import { ShopService } from '../../core/services/shop.service';
       font-size: 26px;
       color: var(--dark-navy);
       margin-bottom: 24px;
+      font-weight: 800;
     }
     .checkout-layout {
       display: grid;
@@ -152,6 +319,7 @@ import { ShopService } from '../../core/services/shop.service';
       border-radius: var(--radius-md);
       padding: 24px;
       margin-bottom: 24px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
     }
     .card-title-row {
       display: flex;
@@ -160,13 +328,23 @@ import { ShopService } from '../../core/services/shop.service';
       margin-bottom: 18px;
       .add-addr-btn {
         background: transparent;
+        border: none;
         color: var(--primary-pink);
         font-weight: 700;
         font-size: 13px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: all 0.2s;
+        &:hover {
+          background: #FFF0F5;
+          text-decoration: underline;
+        }
       }
     }
     .step-title {
       font-size: 18px;
+      font-weight: 800;
       color: var(--dark-navy);
       .step-num {
         color: var(--primary-pink);
@@ -181,12 +359,14 @@ import { ShopService } from '../../core/services/shop.service';
       display: flex;
       gap: 14px;
       padding: 16px;
-      border: 1px solid var(--border-pink);
+      border: 1.5px solid var(--border-pink);
       border-radius: var(--radius-sm);
       cursor: pointer;
+      transition: all 0.2s;
       input {
         accent-color: var(--primary-pink);
         margin-top: 4px;
+        cursor: pointer;
       }
       &.selected {
         border-color: var(--primary-pink);
@@ -197,23 +377,60 @@ import { ShopService } from '../../core/services/shop.service';
         .addr-header {
           display: flex;
           justify-content: space-between;
+          align-items: center;
+          .name-block {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
           .person-name {
             font-size: 15px;
             font-weight: 700;
             color: var(--dark-navy);
           }
+          .addr-type-pill {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: #FFE2ED;
+            color: var(--primary-pink);
+            text-transform: uppercase;
+          }
+          .addr-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
           .edit-link {
             background: transparent;
+            border: none;
             color: var(--primary-pink);
             font-size: 12px;
             font-weight: 700;
+            cursor: pointer;
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+          .delete-link {
+            background: transparent;
+            border: none;
+            color: #94A3B8;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            &:hover {
+              color: #EF4444;
+              text-decoration: underline;
+            }
           }
         }
         .addr-text {
           font-size: 13px;
           color: var(--text-muted);
           margin: 6px 0 4px;
-          line-height: 1.4;
+          line-height: 1.45;
         }
         .phone-text {
           font-size: 13px;
@@ -251,62 +468,78 @@ import { ShopService } from '../../core/services/shop.service';
       }
       .pay-icons {
         font-size: 12px;
-        color: var(--text-muted);
+        color: var(--text-light);
       }
     }
     .place-order-btn {
       width: 100%;
-      padding: 14px 0;
+      padding: 15px;
       font-size: 16px;
+      cursor: pointer;
+    }
+    .checkout-sidebar {
+      position: sticky;
+      top: 100px;
     }
     .summary-card {
       background: #FFFFFF;
       border: 1px solid var(--border-pink);
       border-radius: var(--radius-md);
-      padding: 22px;
+      padding: 24px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
     }
     .summary-title {
-      font-size: 16px;
+      font-size: 17px;
       color: var(--dark-navy);
+      font-weight: 800;
       margin-bottom: 18px;
     }
     .summary-items {
       display: flex;
       flex-direction: column;
       gap: 14px;
-    }
-    .summary-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      .item-img {
-        width: 48px;
-        height: 58px;
-        object-fit: cover;
-        border-radius: 6px;
-      }
-      .item-meta {
-        flex: 1;
-        .name {
-          font-size: 13px;
+      max-height: 280px;
+      overflow-y: auto;
+      .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        .item-img {
+          width: 50px;
+          height: 50px;
+          border-radius: 8px;
+          object-fit: cover;
+          border: 1px solid var(--border-pink);
+        }
+        .item-meta {
+          flex: 1;
+          .name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--dark-navy);
+          }
+          .size {
+            font-size: 12px;
+            color: var(--text-muted);
+          }
+        }
+        .price {
+          font-size: 14px;
           font-weight: 700;
           color: var(--dark-navy);
         }
-        .size {
-          font-size: 12px;
-          color: var(--text-muted);
-        }
       }
-      .price {
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--dark-navy);
-      }
+    }
+    .empty-cart-note {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 12px 0;
     }
     .divider {
       height: 1px;
-      background: var(--border-pink);
-      margin: 14px 0;
+      background-color: var(--border-pink);
+      margin: 16px 0;
     }
     .price-line {
       display: flex;
@@ -314,64 +547,408 @@ import { ShopService } from '../../core/services/shop.service';
       font-size: 13px;
       color: var(--text-muted);
       margin-bottom: 10px;
-      .discount-text, .free-text {
-        color: var(--success-green);
+      .discount-text {
+        color: #28A745;
         font-weight: 700;
       }
-      &.total-line {
-        font-size: 17px;
-        font-weight: 800;
+      .free-text {
+        color: #28A745;
+        font-weight: 700;
+      }
+    }
+    .total-line {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--dark-navy);
+      margin-top: 14px;
+      margin-bottom: 0;
+      .total-amt {
         color: var(--dark-navy);
-        margin-top: 14px;
-        .total-amt {
+        font-size: 18px;
+      }
+    }
+
+    /* Add/Edit Modal Styles */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(24, 38, 59, 0.65);
+      z-index: 99990;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .modal-dialog {
+      background: #FFFFFF;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 580px;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      animation: zoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border-pink);
+      .modal-title {
+        font-size: 18px;
+        color: var(--dark-navy);
+        font-weight: 800;
+      }
+      .modal-sub {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+      .modal-close-btn {
+        background: transparent;
+        border: none;
+        font-size: 18px;
+        color: var(--text-light);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        &:hover {
           color: var(--dark-navy);
+          background: #F3F4F6;
+        }
+      }
+    }
+    .modal-body {
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      label {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #334155;
+      }
+    }
+    .form-row {
+      display: flex;
+      gap: 14px;
+      .col {
+        flex: 1;
+      }
+    }
+    .form-control {
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      font-family: inherit;
+      color: #1E293B;
+      outline: none;
+      transition: border-color 0.2s;
+      background: #FFFFFF;
+      &:focus {
+        border-color: var(--primary-pink);
+      }
+    }
+    .type-pill-group {
+      display: flex;
+      gap: 10px;
+      .type-pill {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--border-pink);
+        background: #FFFFFF;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--dark-navy);
+        cursor: pointer;
+        transition: all 0.2s;
+        &.selected {
+          border-color: var(--primary-pink);
+          background: #FFF0F5;
+          color: var(--primary-pink);
+        }
+      }
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 8px;
+      padding-top: 14px;
+      border-top: 1px solid #F1E5EC;
+      .btn-cancel {
+        background: transparent;
+        border: 1px solid #CBD5E1;
+        border-radius: var(--radius-full);
+        padding: 9px 20px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #64748B;
+        cursor: pointer;
+        &:hover {
+          background: #F8FAFC;
         }
       }
     }
 
-    @media (max-width: 900px) {
-      .checkout-layout {
-        grid-template-columns: 1fr;
-        gap: 24px;
-      }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes zoomIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
 
-    @media (max-width: 480px) {
-      .checkout-card {
-        padding: 16px;
+    @media (max-width: 768px) {
+      .checkout-layout {
+        grid-template-columns: 1fr;
       }
-      .summary-card {
-        padding: 16px;
+      .checkout-sidebar {
+        position: static;
       }
-      .pay-method-option {
-        padding: 10px 12px;
+      .form-row {
+        flex-direction: column;
+        gap: 12px;
       }
     }
   `]
 })
-export class CheckoutComponent {
+export class CheckoutComponent implements OnInit {
   shopService = inject(ShopService);
+  toastService = inject(ToastService);
   router = inject(Router);
 
   selectedPayment = 'card';
   isProcessing = false;
 
-  customerAddress = {
-    name: 'Priya Sharma',
-    phone: '9876543210',
-    addressLine1: '123, Green Park',
-    addressLine2: 'Indiranagar',
+  addresses: DeliveryAddress[] = [
+    {
+      id: 'addr-1',
+      name: 'Priya Sharma',
+      phone: '9876543210',
+      addressLine1: '123, Green Park',
+      addressLine2: 'Indiranagar',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      pinCode: '560001',
+      type: 'Home'
+    },
+    {
+      id: 'addr-2',
+      name: 'Office',
+      phone: '9123456780',
+      addressLine1: 'ABC Tech Park, Whitefield',
+      addressLine2: '',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      pinCode: '560066',
+      type: 'Office'
+    }
+  ];
+
+  selectedAddressId = 'addr-1';
+
+  // Modal State
+  showAddressModal = false;
+  isEditingAddress = false;
+  editingAddressId: string | null = null;
+
+  addressForm: {
+    name: string;
+    phone: string;
+    addressLine1: string;
+    addressLine2: string;
+    city: string;
+    state: string;
+    pinCode: string;
+    type: string;
+  } = {
+    name: '',
+    phone: '',
+    addressLine1: '',
+    addressLine2: '',
     city: 'Bangalore',
     state: 'Karnataka',
-    pinCode: '560001'
+    pinCode: '560001',
+    type: 'Home'
   };
 
-  placeOrder() {
-    if (this.shopService.cartItems().length === 0) {
-      alert('Your cart is empty! Please add items to checkout.');
+  ngOnInit() {
+    this.loadSavedAddresses();
+  }
+
+  loadSavedAddresses() {
+    try {
+      const saved = localStorage.getItem('sc_checkout_addresses');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.addresses = parsed;
+        }
+      }
+      const savedId = localStorage.getItem('sc_selected_address_id');
+      if (savedId && this.addresses.some(a => a.id === savedId)) {
+        this.selectedAddressId = savedId;
+      } else if (this.addresses.length > 0) {
+        this.selectedAddressId = this.addresses[0].id;
+      }
+    } catch {
+      // fallback to initial state
+    }
+  }
+
+  saveAddressesToStorage() {
+    try {
+      localStorage.setItem('sc_checkout_addresses', JSON.stringify(this.addresses));
+      localStorage.setItem('sc_selected_address_id', this.selectedAddressId);
+    } catch {
+      // silent
+    }
+  }
+
+  selectAddress(id: string) {
+    this.selectedAddressId = id;
+    this.saveAddressesToStorage();
+  }
+
+  openAddAddressModal() {
+    this.isEditingAddress = false;
+    this.editingAddressId = null;
+    this.addressForm = {
+      name: '',
+      phone: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      pinCode: '560001',
+      type: 'Home'
+    };
+    this.showAddressModal = true;
+  }
+
+  openEditAddressModal(addr: DeliveryAddress, event?: Event) {
+    if (event) event.stopPropagation();
+    this.isEditingAddress = true;
+    this.editingAddressId = addr.id;
+    this.addressForm = {
+      name: addr.name,
+      phone: addr.phone,
+      addressLine1: addr.addressLine1,
+      addressLine2: addr.addressLine2 || '',
+      city: addr.city,
+      state: addr.state,
+      pinCode: addr.pinCode,
+      type: addr.type || 'Home'
+    };
+    this.showAddressModal = true;
+  }
+
+  closeAddressModal() {
+    this.showAddressModal = false;
+  }
+
+  saveAddress(e: Event) {
+    e.preventDefault();
+    if (!this.addressForm.name.trim()) {
+      this.toastService.error('Please enter the contact person name.');
+      return;
+    }
+    if (!this.addressForm.phone.trim() || this.addressForm.phone.trim().length < 10) {
+      this.toastService.error('Please enter a valid 10-digit phone number.');
+      return;
+    }
+    if (!this.addressForm.addressLine1.trim()) {
+      this.toastService.error('Please enter house/flat number and street details.');
+      return;
+    }
+    if (!this.addressForm.city.trim() || !this.addressForm.pinCode.trim()) {
+      this.toastService.error('Please provide city and PIN code.');
       return;
     }
 
+    if (this.isEditingAddress && this.editingAddressId) {
+      const idx = this.addresses.findIndex(a => a.id === this.editingAddressId);
+      if (idx !== -1) {
+        this.addresses[idx] = {
+          id: this.editingAddressId,
+          name: this.addressForm.name.trim(),
+          phone: this.addressForm.phone.trim(),
+          addressLine1: this.addressForm.addressLine1.trim(),
+          addressLine2: this.addressForm.addressLine2.trim() || undefined,
+          city: this.addressForm.city.trim(),
+          state: this.addressForm.state.trim(),
+          pinCode: this.addressForm.pinCode.trim(),
+          type: this.addressForm.type
+        };
+        this.toastService.success('Delivery address updated successfully!');
+      }
+    } else {
+      const newAddr: DeliveryAddress = {
+        id: 'addr-' + Date.now(),
+        name: this.addressForm.name.trim(),
+        phone: this.addressForm.phone.trim(),
+        addressLine1: this.addressForm.addressLine1.trim(),
+        addressLine2: this.addressForm.addressLine2.trim() || undefined,
+        city: this.addressForm.city.trim(),
+        state: this.addressForm.state.trim(),
+        pinCode: this.addressForm.pinCode.trim(),
+        type: this.addressForm.type
+      };
+      this.addresses.unshift(newAddr);
+      this.selectedAddressId = newAddr.id;
+      this.toastService.success('New delivery address added!');
+    }
+
+    this.saveAddressesToStorage();
+    this.showAddressModal = false;
+  }
+
+  deleteAddress(id: string, event: Event) {
+    event.stopPropagation();
+    if (confirm('Are you sure you want to delete this address?')) {
+      this.addresses = this.addresses.filter(a => a.id !== id);
+      if (this.selectedAddressId === id && this.addresses.length > 0) {
+        this.selectedAddressId = this.addresses[0].id;
+      }
+      this.saveAddressesToStorage();
+      this.toastService.info('Address removed.');
+    }
+  }
+
+  getSelectedAddress(): DeliveryAddress {
+    return this.addresses.find(a => a.id === this.selectedAddressId) || this.addresses[0] || {
+      id: 'default',
+      name: 'Customer',
+      phone: '9876543210',
+      addressLine1: 'Main Street',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      pinCode: '560001'
+    };
+  }
+
+  placeOrder() {
+    if (this.shopService.cartItems().length === 0) {
+      this.toastService.error('Your cart is empty! Please add items to checkout.');
+      return;
+    }
+
+    const currentAddr = this.getSelectedAddress();
     this.isProcessing = true;
 
     const isCod = this.selectedPayment === 'cod';
@@ -385,13 +962,13 @@ export class CheckoutComponent {
       taxAmount: Math.round(this.shopService.cartSubtotal() * 0.05),
       totalAmount: this.shopService.cartTotal(),
       couponCode: 'WELCOME300',
-      shippingName: this.customerAddress.name,
-      shippingPhone: this.customerAddress.phone,
-      shippingAddressLine1: this.customerAddress.addressLine1,
-      shippingAddressLine2: this.customerAddress.addressLine2,
-      shippingCity: this.customerAddress.city,
-      shippingState: this.customerAddress.state,
-      shippingPinCode: this.customerAddress.pinCode,
+      shippingName: currentAddr.name,
+      shippingPhone: currentAddr.phone,
+      shippingAddressLine1: currentAddr.addressLine1,
+      shippingAddressLine2: currentAddr.addressLine2 || null,
+      shippingCity: currentAddr.city,
+      shippingState: currentAddr.state,
+      shippingPinCode: currentAddr.pinCode,
       items: this.shopService.cartItems().map(i => ({
         productId: i.productId && i.productId.length === 36 ? i.productId : null,
         productVariantId: i.productVariantId && i.productVariantId.length === 36 ? i.productVariantId : null,
@@ -422,7 +999,7 @@ export class CheckoutComponent {
         }
 
         // Razorpay flow
-        this.initiateRazorpayPayment(order);
+        this.initiateRazorpayPayment(order, currentAddr);
       },
       error: (err) => {
         this.isProcessing = false;
@@ -431,16 +1008,16 @@ export class CheckoutComponent {
           || (err.error?.errors ? JSON.stringify(err.error.errors) : null)
           || err.message 
           || 'Failed to initialize order. Please check your network or try again.';
-        alert(`Failed to initialize order: ${detailedMsg}`);
+        this.toastService.error(`Order failed: ${detailedMsg}`);
       }
     });
   }
 
-  private initiateRazorpayPayment(order: any) {
+  private initiateRazorpayPayment(order: any, currentAddr: DeliveryAddress) {
     this.loadRazorpayScript().then((loaded) => {
       if (!loaded || !(window as any).Razorpay) {
         this.isProcessing = false;
-        alert('Razorpay gateway failed to load. Please verify your internet connection or ad-blocker settings.');
+        this.toastService.error('Razorpay gateway failed to load. Please verify your internet connection.');
         return;
       }
 
@@ -479,13 +1056,13 @@ export class CheckoutComponent {
                     },
                     error: (verifyErr) => {
                       this.isProcessing = false;
-                      alert(verifyErr.error?.message || 'Payment verification failed. If money was debited, it will be refunded automatically.');
+                      this.toastService.error(verifyErr.error?.message || 'Payment verification failed. If money was debited, it will be refunded.');
                     }
                   });
                 },
                 prefill: {
-                  name: this.customerAddress.name,
-                  contact: this.customerAddress.phone,
+                  name: currentAddr.name,
+                  contact: currentAddr.phone,
                   email: 'customer@southcolours.com'
                 },
                 theme: {
@@ -503,13 +1080,13 @@ export class CheckoutComponent {
             },
             error: (createErr) => {
               this.isProcessing = false;
-              alert(createErr.error?.message || 'Unable to create Razorpay payment order. Please try again.');
+              this.toastService.error(createErr.error?.message || 'Unable to create payment order. Please try again.');
             }
           });
         },
         error: () => {
           this.isProcessing = false;
-          alert('Unable to retrieve payment configuration. Please try again later.');
+          this.toastService.error('Unable to retrieve payment configuration. Please try again later.');
         }
       });
     });
@@ -529,4 +1106,3 @@ export class CheckoutComponent {
     });
   }
 }
-
