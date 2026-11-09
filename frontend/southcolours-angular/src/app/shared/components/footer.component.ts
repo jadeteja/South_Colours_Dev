@@ -50,8 +50,6 @@ import { RouterModule } from '@angular/router';
           <ul>
             <li>100% Cotton Linings</li>
             <li>Safe & Secure Payments</li>
-            <li>Free Shipping over ₹999</li>
-            <li>Easy 7-Day Returns</li>
           </ul>
         </div>
       </div>
