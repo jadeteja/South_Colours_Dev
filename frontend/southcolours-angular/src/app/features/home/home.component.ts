@@ -304,16 +304,15 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
     }
     .ribbon-inner-content {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 6px;
+      left: 18px;
+      right: 10px;
+      bottom: 14px;
       display: flex;
       align-items: center;
-      padding-left: 22px;
-      padding-top: 2px;
-      gap: 7px;
-      transform: rotate(-4deg);
+      justify-content: center;
+      gap: 8px;
+      transform: rotate(-3deg);
       user-select: none;
     }
     .truck-icon-box {
@@ -332,17 +331,19 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
     .ribbon-text-box {
       display: flex;
       flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
       line-height: 1.05;
       color: #FFFFFF;
       text-shadow: 0 1px 2px rgba(130, 2, 45, 0.5);
       .ribbon-free {
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 900;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.2px;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
       .ribbon-shipping {
-        font-size: 14px;
+        font-size: 13.5px;
         font-weight: 800;
         letter-spacing: -0.2px;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -691,19 +692,22 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
         height: 58px;
       }
       .ribbon-inner-content {
-        padding-left: 18px;
+        top: 4px;
+        left: 15px;
+        right: 8px;
+        bottom: 12px;
         gap: 6px;
       }
       .truck-icon-box {
-        width: 26px;
-        height: 20px;
+        width: 25px;
+        height: 19px;
       }
       .ribbon-text-box {
         .ribbon-free {
-          font-size: 13px;
+          font-size: 12.5px;
         }
         .ribbon-shipping {
-          font-size: 12px;
+          font-size: 11.5px;
         }
       }
       .hero-title {
