@@ -26,6 +26,83 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
               </a>
             </div>
             <div class="hero-image-wrapper">
+              <!-- Free Shipping Badge matching reference screenshot -->
+              <div class="shipping-badge-container">
+                <div class="shipping-ribbon-badge">
+                  <!-- Decorative yellow energy/speed sparks on top right -->
+                  <div class="ribbon-sparks" aria-hidden="true">
+                    <span class="spark spark-1"></span>
+                    <span class="spark spark-2"></span>
+                    <span class="spark spark-3"></span>
+                  </div>
+
+                  <!-- Ribbon SVG badge -->
+                  <div class="ribbon-shape-wrapper">
+                    <svg class="ribbon-svg" viewBox="0 0 160 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <!-- Rich hot-pink / magenta gradient -->
+                        <linearGradient id="pinkRibbonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stop-color="#FF2A7A" />
+                          <stop offset="55%" stop-color="#E81264" />
+                          <stop offset="100%" stop-color="#C20750" />
+                        </linearGradient>
+                        <linearGradient id="ribbonGleam" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.45" />
+                          <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.05" />
+                        </linearGradient>
+                        <filter id="ribbonDropShadow" x="-20%" y="-20%" width="140%" height="150%">
+                          <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#80022d" flood-opacity="0.32" />
+                        </filter>
+                      </defs>
+
+                      <!-- Ribbon Banner Contour with notched tail and white border -->
+                      <path d="M 14 10 
+                               Q 78 2 150 6 
+                               Q 154 28 144 55 
+                               Q 74 51 18 64 
+                               L 30 37 Z" 
+                            fill="url(#pinkRibbonGrad)" 
+                            stroke="#FFFFFF" 
+                            stroke-width="2.5" 
+                            stroke-linejoin="round"
+                            stroke-linecap="round"
+                            filter="url(#ribbonDropShadow)" />
+
+                      <!-- Soft top border highlight -->
+                      <path d="M 22 13 Q 80 6 144 10" 
+                            stroke="url(#ribbonGleam)" 
+                            stroke-width="2" 
+                            stroke-linecap="round" 
+                            fill="none" />
+                    </svg>
+
+                    <!-- Content inside Ribbon: Delivery Truck & Text -->
+                    <div class="ribbon-inner-content">
+                      <div class="truck-icon-box">
+                        <svg class="truck-svg" viewBox="0 0 36 28" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <!-- Speed motion lines behind truck -->
+                          <path d="M1 8h5M0 13h4M2 18h4" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
+                          <!-- Truck cargo box -->
+                          <rect x="7" y="5" width="16" height="14" rx="1.5" fill="#FFFFFF" />
+                          <!-- Truck cab -->
+                          <path d="M23 10h6l4 4v5h-10v-9z" fill="#FFFFFF" />
+                          <!-- Window cutout -->
+                          <path d="M24 11.5h4.2l2.6 2.5H24v-2.5z" fill="#E81264" />
+                          <!-- Wheels -->
+                          <circle cx="12.5" cy="21" r="3.2" fill="#FFFFFF" />
+                          <circle cx="12.5" cy="21" r="1.4" fill="#E81264" />
+                          <circle cx="28" cy="21" r="3.2" fill="#FFFFFF" />
+                          <circle cx="28" cy="21" r="1.4" fill="#E81264" />
+                        </svg>
+                      </div>
+                      <div class="ribbon-text-box">
+                        <span class="ribbon-free">Free</span>
+                        <span class="ribbon-shipping">Shipping</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <img src="https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=800&q=80" alt="Little girl model in pink ethnic dress" class="hero-model-img">
             </div>
           </div>
@@ -186,13 +263,174 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
       font-size: 16px;
     }
     .hero-image-wrapper {
-      display: flex;
+      position: relative;
+      display: inline-flex;
       justify-content: flex-end;
+      align-items: flex-start;
       .hero-model-img {
         max-height: 380px;
         object-fit: cover;
         border-radius: 20px;
         box-shadow: 0 15px 35px rgba(255, 64, 129, 0.15);
+        display: block;
+      }
+    }
+
+    /* Free Shipping Ribbon Badge */
+    .shipping-badge-container {
+      position: absolute;
+      top: -12px;
+      left: -20px;
+      z-index: 20;
+      pointer-events: none;
+    }
+    .shipping-ribbon-badge {
+      position: relative;
+      display: inline-block;
+      transform-origin: center center;
+      animation: ribbonPulse 3.2s ease-in-out infinite;
+      will-change: transform, filter, opacity;
+    }
+    .ribbon-shape-wrapper {
+      position: relative;
+      width: 154px;
+      height: 68px;
+    }
+    .ribbon-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      filter: drop-shadow(0 6px 12px rgba(232, 18, 100, 0.28));
+    }
+    .ribbon-inner-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding-left: 22px;
+      padding-top: 2px;
+      gap: 7px;
+      transform: rotate(-4deg);
+      user-select: none;
+    }
+    .truck-icon-box {
+      width: 32px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      animation: truckDrive 3.2s ease-in-out infinite;
+      .truck-svg {
+        width: 100%;
+        height: 100%;
+      }
+    }
+    .ribbon-text-box {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.05;
+      color: #FFFFFF;
+      text-shadow: 0 1px 2px rgba(130, 2, 45, 0.5);
+      .ribbon-free {
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: 0.3px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      .ribbon-shipping {
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: -0.2px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+    }
+
+    /* Decorative yellow energy sparks */
+    .ribbon-sparks {
+      position: absolute;
+      top: -2px;
+      right: 22px;
+      width: 24px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 25;
+      animation: sparkGlow 3.2s ease-in-out infinite;
+    }
+    .spark {
+      position: absolute;
+      background: #FFD500;
+      border-radius: 2px;
+      box-shadow: 0 0 6px #FFD500, 0 0 10px #FF9100;
+    }
+    .spark-1 {
+      width: 3px;
+      height: 10px;
+      top: 0;
+      left: 6px;
+      transform: rotate(-30deg);
+    }
+    .spark-2 {
+      width: 3px;
+      height: 11px;
+      top: 2px;
+      left: 14px;
+      transform: rotate(5deg);
+    }
+    .spark-3 {
+      width: 3px;
+      height: 9px;
+      top: 7px;
+      left: 20px;
+      transform: rotate(40deg);
+    }
+
+    /* Smooth, pleasant pulsing keyframe animations */
+    @keyframes ribbonPulse {
+      0%, 100% {
+        transform: scale(1) rotate(0deg);
+        filter: brightness(1) drop-shadow(0 4px 8px rgba(232, 18, 100, 0.25));
+        opacity: 1;
+      }
+      45% {
+        transform: scale(1.045) rotate(-0.5deg);
+        filter: brightness(1.08) drop-shadow(0 8px 16px rgba(232, 18, 100, 0.38));
+        opacity: 0.98;
+      }
+      70% {
+        transform: scale(1.015) rotate(0.2deg);
+        filter: brightness(1.03) drop-shadow(0 6px 12px rgba(232, 18, 100, 0.3));
+        opacity: 1;
+      }
+    }
+
+    @keyframes truckDrive {
+      0%, 100% {
+        transform: translateX(0);
+      }
+      45% {
+        transform: translateX(2px) translateY(-0.5px);
+      }
+      70% {
+        transform: translateX(0.5px);
+      }
+    }
+
+    @keyframes sparkGlow {
+      0%, 100% {
+        opacity: 0.85;
+        transform: scale(0.95);
+      }
+      45% {
+        opacity: 1;
+        transform: scale(1.15);
+      }
+      70% {
+        opacity: 0.9;
+        transform: scale(1);
       }
     }
 
@@ -438,9 +676,34 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
       .hero-image-wrapper {
         order: 1;
         justify-content: center;
-        margin-bottom: 20px;
+        margin-bottom: 24px;
+        position: relative;
         .hero-model-img {
           max-height: 260px;
+        }
+      }
+      .shipping-badge-container {
+        top: -10px;
+        left: -12px;
+      }
+      .ribbon-shape-wrapper {
+        width: 132px;
+        height: 58px;
+      }
+      .ribbon-inner-content {
+        padding-left: 18px;
+        gap: 6px;
+      }
+      .truck-icon-box {
+        width: 26px;
+        height: 20px;
+      }
+      .ribbon-text-box {
+        .ribbon-free {
+          font-size: 13px;
+        }
+        .ribbon-shipping {
+          font-size: 12px;
         }
       }
       .hero-title {
