@@ -492,12 +492,16 @@ export class AdminAddProductComponent implements OnInit {
     if (input.files && input.files.length > 0) {
       for (let i = 0; i < input.files.length; i++) {
         const file = input.files[i];
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-          this.images.push(e.target.result);
-        };
-        reader.readAsDataURL(file);
+        this.shopService.uploadImage(file).subscribe({
+          next: (res) => {
+            this.images.push(res.url);
+          },
+          error: (err) => {
+            this.toastService.error(`Failed to upload ${file.name}: ${err.error?.message || err.message}`);
+          }
+        });
       }
+      input.value = '';
     }
   }
 

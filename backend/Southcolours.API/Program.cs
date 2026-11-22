@@ -9,9 +9,12 @@ using Southcolours.Persistence.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Dynamic port binding for Render (reads $PORT, defaults to 8080 or 5000)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+// Dynamic port binding for Render (reads $PORT, defaults to launchSettings.json when running locally)
+var envPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(envPort))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{envPort}");
+}
 
 // 1. Database Connection (Supports PostgreSQL for Cloud/Render and SQL Server for Local)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -150,7 +153,27 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0" }));
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0" }));
 
-// 7b. Serve Single-Page Application (Angular) Static Files
+// 7b. Serve Uploaded Static Media Files (/uploads/*)
+// Cross-Platform: Reads UPLOADS_PATH env var on Linux VPS or falls back to wwwroot/uploads
+var customUploadsPath = Environment.GetEnvironmentVariable("UPLOADS_PATH") 
+                        ?? builder.Configuration["Uploads:StoragePath"];
+
+var uploadsPath = !string.IsNullOrWhiteSpace(customUploadsPath)
+    ? Path.GetFullPath(customUploadsPath)
+    : Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");
+
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
+// 7c. Serve Single-Page Application (Angular) Static Files
 // Priority 1: Published wwwroot folder (production/VPS)
 // Priority 2: Local development build dist folder
 var wwwrootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
@@ -205,17 +228,18 @@ app.MapGet("/api/seed", async (ApplicationDbContext context, UserManager<Identit
     }
 });
 
-// 8. Automatic Migration & Seed on Startup (Background task so web server starts immediately without blocking port binding)
-_ = Task.Run(async () =>
+// 8. Automatic Migration & Seed on Startup
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        logger.LogInformation("Database tables exist. Starting seeding...");
+        logger.LogInformation("Applying migrations and ensuring database is created...");
+        await context.Database.MigrateAsync();
 
+        logger.LogInformation("Database tables ready. Starting seeding...");
         var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
@@ -225,6 +249,6 @@ _ = Task.Run(async () =>
     {
         logger.LogError(ex, "An error occurred during database migration/seeding.");
     }
-});
+}
 
 app.Run();

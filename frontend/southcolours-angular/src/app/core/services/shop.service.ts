@@ -49,6 +49,12 @@ export class ShopService {
     return this.http.post<any>(`${this.apiUrl}/products`, payload);
   }
 
+  uploadImage(file: File): Observable<{ url: string; fileName: string; size: number }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ url: string; fileName: string; size: number }>(`${this.apiUrl}/uploads`, formData);
+  }
+
   // Categories CRUD
   createCategory(payload: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/categories`, payload);

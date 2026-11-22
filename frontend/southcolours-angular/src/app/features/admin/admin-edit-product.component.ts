@@ -204,11 +204,15 @@ export class AdminEditProductComponent implements OnInit {
   onFileSelected(event: any) {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.editData.imageUrls.push(e.target.result);
-      };
-      reader.readAsDataURL(file);
+      this.shopService.uploadImage(file).subscribe({
+        next: (res) => {
+          this.editData.imageUrls.push(res.url);
+        },
+        error: (err) => {
+          alert(`Failed to upload ${file.name}: ${err.error?.message || err.message}`);
+        }
+      });
+      event.target.value = '';
     }
   }
 
