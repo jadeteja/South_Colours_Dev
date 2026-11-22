@@ -13,6 +13,7 @@ import { ProfileComponent } from './features/profile/profile.component';
 import { AboutComponent } from './features/about/about.component';
 import { PrivacyPolicyComponent } from './features/legal/privacy-policy.component';
 import { ReturnsRefundsComponent } from './features/legal/returns-refunds.component';
+import { TermsConditionsComponent } from './features/legal/terms-conditions.component';
 import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 
@@ -47,6 +48,9 @@ export const routes: Routes = [
   { path: 'returns', component: ReturnsRefundsComponent },
   { path: 'refunds', redirectTo: 'returns', pathMatch: 'full' },
   { path: 'returns-refunds', redirectTo: 'returns', pathMatch: 'full' },
+  { path: 'terms', component: TermsConditionsComponent },
+  { path: 'terms-and-conditions', redirectTo: 'terms', pathMatch: 'full' },
+  { path: 'terms-of-service', redirectTo: 'terms', pathMatch: 'full' },
   { path: 'addresses', redirectTo: 'profile?tab=addresses', pathMatch: 'full' },
   { path: 'payments', redirectTo: 'profile?tab=cards', pathMatch: 'full' },
   { path: 'wishlist', component: WishlistComponent },

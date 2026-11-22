@@ -61,7 +61,7 @@ import { RouterModule } from '@angular/router';
           <div class="legal-links">
             <a routerLink="/privacy">Privacy Policy</a>
             <span>•</span>
-            <a routerLink="/terms">Terms of Service</a>
+            <a routerLink="/terms">Terms and Conditions</a>
           </div>
         </div>
       </div>
