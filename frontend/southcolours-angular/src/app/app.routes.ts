@@ -12,6 +12,7 @@ import { RegisterComponent } from './features/auth/register.component';
 import { ProfileComponent } from './features/profile/profile.component';
 import { AboutComponent } from './features/about/about.component';
 import { PrivacyPolicyComponent } from './features/legal/privacy-policy.component';
+import { ReturnsRefundsComponent } from './features/legal/returns-refunds.component';
 import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 
@@ -43,6 +44,9 @@ export const routes: Routes = [
   { path: 'contact', redirectTo: 'about', pathMatch: 'full' },
   { path: 'privacy', component: PrivacyPolicyComponent },
   { path: 'privacy-policy', redirectTo: 'privacy', pathMatch: 'full' },
+  { path: 'returns', component: ReturnsRefundsComponent },
+  { path: 'refunds', redirectTo: 'returns', pathMatch: 'full' },
+  { path: 'returns-refunds', redirectTo: 'returns', pathMatch: 'full' },
   { path: 'addresses', redirectTo: 'profile?tab=addresses', pathMatch: 'full' },
   { path: 'payments', redirectTo: 'profile?tab=cards', pathMatch: 'full' },
   { path: 'wishlist', component: WishlistComponent },
