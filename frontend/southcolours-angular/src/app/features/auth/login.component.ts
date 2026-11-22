@@ -42,7 +42,7 @@ import { AuthService } from '../../core/services/auth.service';
               type="email" 
               [(ngModel)]="email" 
               name="email" 
-              placeholder="e.g. admin@southcolours.com" 
+              placeholder="e.g. you@example.com" 
               required 
               class="form-control" 
             />
@@ -61,13 +61,6 @@ import { AuthService } from '../../core/services/auth.service';
               required 
               class="form-control" 
             />
-          </div>
-
-          <!-- Quick Fill Testing Credentials -->
-          <div class="quick-credentials">
-            <span class="quick-label">⚡ Quick Fill Demo:</span>
-            <button type="button" class="quick-chip" (click)="fillAdmin()">Admin Login</button>
-            <button type="button" class="quick-chip" (click)="fillCustomer()">Customer Login</button>
           </div>
 
           <button type="submit" class="btn-primary submit-btn" [disabled]="!email || !password || isLoading">
@@ -144,32 +137,6 @@ import { AuthService } from '../../core/services/auth.service';
         box-shadow: 0 0 0 3px rgba(255, 64, 129, 0.15);
       }
     }
-    .quick-credentials {
-      background: #F8FAFC;
-      border: 1px dashed #CBD5E1;
-      padding: 10px 12px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      .quick-label { font-size: 11px; font-weight: 700; color: #64748B; }
-      .quick-chip {
-        background: #FFFFFF;
-        border: 1px solid #CBD5E1;
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--dark-navy);
-        cursor: pointer;
-        &:hover {
-          background: #FFF0F5;
-          border-color: var(--border-pink);
-          color: var(--primary-pink);
-        }
-      }
-    }
     .submit-btn {
       width: 100%;
       padding: 12px;
@@ -226,18 +193,6 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/profile']);
       }
     }
-  }
-
-  fillAdmin() {
-    this.email = 'admin@southcolours.com';
-    this.password = 'Admin@South123#';
-    this.errorMessage = '';
-  }
-
-  fillCustomer() {
-    this.email = 'customer@southcolours.com';
-    this.password = 'Customer@123#';
-    this.errorMessage = '';
   }
 
   onLogin() {
