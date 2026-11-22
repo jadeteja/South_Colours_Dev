@@ -31,15 +31,7 @@ import { Product } from '../../core/models/ecommerce.models';
               }
             </button>
             <a routerLink="/" class="logo-group" (click)="closeMobileMenu()">
-              <div class="logo-flower">
-                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#FF4081" stroke-width="2">
-                  <circle cx="12" cy="12" r="3" fill="#FF4081"/>
-                  <path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 4 3s4-1 4-3a4 4 0 0 0-4-4z" fill="#FFD6E7"/>
-                  <path d="M12 22a4 4 0 0 0 4-4c0-2-2-3-4-3s-4 1-4 3a4 4 0 0 0 4 4z" fill="#FFD6E7"/>
-                  <path d="M2 12a4 4 0 0 0 4 4c2 0 3-2 3-4s-1-4-3-4a4 4 0 0 0-4 4z" fill="#FFD6E7"/>
-                  <path d="M22 12a4 4 0 0 0-4-4c-2 0-3 2-3 4s1 4 3 4a4 4 0 0 0 4-4z" fill="#FFD6E7"/>
-                </svg>
-              </div>
+              <img src="assets/images/logo.jpg" alt="Southcolours Logo" class="brand-logo-img" />
               <div class="logo-text">
                 <span class="brand-title">Southcolours</span>
                 <span class="brand-tagline">Little Styles, Big Smiles</span>
@@ -189,7 +181,14 @@ import { Product } from '../../core/models/ecommerce.models';
     .logo-group {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .brand-logo-img {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+      border-radius: 6px;
     }
     .logo-text {
       display: flex;
