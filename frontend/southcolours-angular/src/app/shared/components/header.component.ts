@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ShopService } from '../../core/services/shop.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Product } from '../../core/models/ecommerce.models';
 
 @Component({
@@ -110,12 +111,66 @@ import { Product } from '../../core/models/ecommerce.models';
 
           <!-- Action Icons -->
           <div class="header-actions">
-            <a routerLink="/auth/login" class="action-item" title="My Account">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </a>
+            @if (authService.isAuthenticated()) {
+              <div class="user-menu-wrapper" (click)="$event.stopPropagation()">
+                <button class="action-item user-btn" (click)="toggleUserDropdown()" [class.active]="isUserDropdownOpen" title="Account Menu">
+                  <span class="user-avatar-small">{{ getUserInitials() }}</span>
+                </button>
+
+                @if (isUserDropdownOpen) {
+                  <div class="user-dropdown">
+                    <div class="dropdown-user-header">
+                      <span class="dropdown-greeting">Hello,</span>
+                      <strong class="dropdown-username">{{ authService.currentUser()?.fullName || 'Customer' }}</strong>
+                      <span class="dropdown-email">{{ authService.currentUser()?.email }}</span>
+                    </div>
+
+                    <div class="dropdown-divider"></div>
+
+                    <a routerLink="/profile" [queryParams]="{ tab: 'profile' }" class="dropdown-item" (click)="isUserDropdownOpen = false">
+                      <span class="item-icon">👤</span> My Profile
+                    </a>
+                    <a routerLink="/profile" [queryParams]="{ tab: 'orders' }" class="dropdown-item" (click)="isUserDropdownOpen = false">
+                      <span class="item-icon">📦</span> Orders
+                    </a>
+                    <a routerLink="/profile" [queryParams]="{ tab: 'addresses' }" class="dropdown-item" (click)="isUserDropdownOpen = false">
+                      <span class="item-icon">📍</span> Addresses
+                    </a>
+                    <a routerLink="/profile" [queryParams]="{ tab: 'cards' }" class="dropdown-item" (click)="isUserDropdownOpen = false">
+                      <span class="item-icon">💳</span> Saved Cards
+                    </a>
+                    <a routerLink="/profile" [queryParams]="{ tab: 'reviews' }" class="dropdown-item" (click)="isUserDropdownOpen = false">
+                      <span class="item-icon">⭐</span> My Reviews & Ratings
+                    </a>
+                    <a routerLink="/profile" [queryParams]="{ tab: 'notifications' }" class="dropdown-item" (click)="isUserDropdownOpen = false">
+                      <span class="item-icon">🔔</span> All Notifications
+                    </a>
+                    <a routerLink="/wishlist" class="dropdown-item" (click)="isUserDropdownOpen = false">
+                      <span class="item-icon">💖</span> Wishlist
+                    </a>
+
+                    @if (authService.isAdmin()) {
+                      <div class="dropdown-divider"></div>
+                      <a routerLink="/admin/dashboard" class="dropdown-item admin-item" (click)="isUserDropdownOpen = false">
+                        <span class="item-icon">⚙️</span> Admin Portal
+                      </a>
+                    }
+
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item logout-item" (click)="logout()">
+                      <span class="item-icon">🚪</span> Logout
+                    </button>
+                  </div>
+                }
+              </div>
+            } @else {
+              <a routerLink="/auth/login" class="action-item" title="Sign In">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </a>
+            }
 
             <a routerLink="/wishlist" class="action-item" title="Wishlist">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -147,7 +202,9 @@ import { Product } from '../../core/models/ecommerce.models';
           <a routerLink="/products" [queryParams]="{ category: 'ethnic-wear' }" routerLinkActive="active" class="highlight" (click)="closeMobileMenu()">Ethnic Wear</a>
           <a routerLink="/products" [queryParams]="{ filter: 'new-arrivals' }" routerLinkActive="active" (click)="closeMobileMenu()">New Arrivals</a>
           <a routerLink="/products" [queryParams]="{ filter: 'offers' }" routerLinkActive="active" class="offers" (click)="closeMobileMenu()">Offers</a>
-          <a routerLink="/admin" class="admin-link" (click)="closeMobileMenu()">Admin Portal</a>
+          @if (authService.isAdmin()) {
+            <a routerLink="/admin/dashboard" class="admin-link" (click)="closeMobileMenu()">Admin Portal</a>
+          }
         </div>
       </nav>
       @if (isMobileMenuOpen) {
@@ -373,10 +430,96 @@ import { Product } from '../../core/models/ecommerce.models';
         flex-shrink: 0;
       }
     }
-    .header-actions {
+    .user-menu-wrapper {
+      position: relative;
+    }
+    .user-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+    .user-avatar-small {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FF4081 0%, #FF80AB 100%);
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 800;
       display: flex;
       align-items: center;
-      gap: 18px;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(255, 64, 129, 0.35);
+      border: 2px solid #FFFFFF;
+      transition: transform 0.2s;
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+    .user-dropdown {
+      position: absolute;
+      top: calc(100% + 12px);
+      right: -10px;
+      width: 250px;
+      background: #FFFFFF;
+      border: 1px solid #FFE4EE;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(255, 64, 129, 0.15), 0 4px 10px rgba(0, 0, 0, 0.05);
+      z-index: 1200;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+
+      .dropdown-user-header {
+        padding: 10px 12px 6px;
+        display: flex;
+        flex-direction: column;
+        .dropdown-greeting { font-size: 10px; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        .dropdown-username { font-size: 14px; color: #1E293B; margin: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dropdown-email { font-size: 11px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      }
+
+      .dropdown-divider {
+        height: 1px;
+        background: #F1F5F9;
+        margin: 6px 0;
+      }
+
+      .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 12px;
+        border-radius: 8px;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        background: transparent;
+        border: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+
+        .item-icon { font-size: 15px; width: 18px; text-align: center; }
+
+        &:hover {
+          background: #FFF5F8;
+          color: #FF4081;
+        }
+
+        &.admin-item {
+          color: #2563EB;
+          &:hover { background: #EFF6FF; }
+        }
+
+        &.logout-item {
+          color: #EF4444;
+          &:hover { background: #FEF2F2; }
+        }
+      }
     }
     .action-item {
       position: relative;
@@ -555,9 +698,11 @@ import { Product } from '../../core/models/ecommerce.models';
 })
 export class HeaderComponent implements OnInit {
   shopService = inject(ShopService);
+  authService = inject(AuthService);
   router = inject(Router);
 
   isMobileMenuOpen = false;
+  isUserDropdownOpen = false;
   searchQuery = '';
   isSearchFocused = false;
   suggestions: Product[] = [];
@@ -573,6 +718,25 @@ export class HeaderComponent implements OnInit {
     this.isMobileMenuOpen = false;
   }
 
+  toggleUserDropdown() {
+    this.isUserDropdownOpen = !this.isUserDropdownOpen;
+  }
+
+  getUserInitials(): string {
+    const name = this.authService.currentUser()?.fullName || 'User';
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  }
+
+  logout() {
+    this.isUserDropdownOpen = false;
+    this.authService.logout();
+  }
+
   ngOnInit() {
     this.loadRecentSearches();
   }
@@ -580,6 +744,7 @@ export class HeaderComponent implements OnInit {
   @HostListener('document:click', ['$event'])
   onDocumentClick() {
     this.isSearchFocused = false;
+    this.isUserDropdownOpen = false;
   }
 
   loadRecentSearches() {

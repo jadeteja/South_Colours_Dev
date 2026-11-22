@@ -27,7 +27,7 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
 
         <h2 class="form-title">Welcome Back</h2>
-        <p class="form-sub">Sign in to access your customer orders or administrative management portal.</p>
+        <p class="form-sub">Sign in to access your orders and account.</p>
 
         @if (errorMessage) {
           <div class="alert-danger">
@@ -217,6 +217,15 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '';
+    if (this.authService.isAuthenticated()) {
+      if (this.returnUrl) {
+        this.router.navigateByUrl(this.returnUrl);
+      } else if (this.authService.isAdmin()) {
+        this.router.navigate(['/admin/dashboard']);
+      } else {
+        this.router.navigate(['/profile']);
+      }
+    }
   }
 
   fillAdmin() {
@@ -243,7 +252,7 @@ export class LoginComponent implements OnInit {
         } else if (this.authService.isAdmin()) {
           this.router.navigate(['/admin/dashboard']);
         } else {
-          this.router.navigate(['/']);
+          this.router.navigate(['/profile']);
         }
       },
       error: (err) => {
