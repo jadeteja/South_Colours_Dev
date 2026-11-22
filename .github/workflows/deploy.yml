@@ -1,0 +1,65 @@
+name: Deploy SouthColours to VPS (Manual)
+
+# Only triggers when you manually click "Run workflow" in GitHub Actions
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'What do you want to deploy?'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - frontend
+          - backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            echo "==== Updating code from GitHub ===="
+            cd /root/South_Colours_Dev
+            git reset --hard HEAD
+            git pull origin main
+
+            TARGET="${{ github.event.inputs.target }}"
+
+            if [ "$TARGET" = "all" ] || [ "$TARGET" = "backend" ]; then
+              echo "==== Building & Deploying .NET 10 API ===="
+              dotnet publish /root/South_Colours_Dev/backend/Southcolours.API/Southcolours.API.csproj -c Release -o /var/www/southcolours/api
+              systemctl restart southcolours-api
+              echo "Backend deployed successfully!"
+            fi
+
+            if [ "$TARGET" = "all" ] || [ "$TARGET" = "frontend" ]; then
+              echo "==== Building & Deploying Angular 19 Frontend ===="
+              cd /root/South_Colours_Dev/frontend/southcolours-angular
+              
+              # Ensure production API URL points to local reverse proxy
+              cat << 'EOF' > src/environments/environment.prod.ts
+            export const environment = {
+              production: true,
+              apiUrl: ''
+            };
+            EOF
+
+              npm install
+              npm run build -- --configuration production
+              cp -r dist/southcolours-angular/browser/* /var/www/southcolours/frontend/
+              systemctl reload nginx
+              echo "Frontend deployed successfully!"
+            fi
+
+            echo "==== Deployment Completed Successfully! ===="
