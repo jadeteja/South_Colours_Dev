@@ -1,0 +1,41 @@
+{
+  "name": "southcolours-automation",
+  "version": "1.0.0",
+  "description": "Playwright TypeScript E2E Automation Framework for SouthColours",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:smoke": "playwright test tests/smoke",
+    "test:regression": "playwright test tests/regression tests/authentication tests/products tests/cart tests/checkout tests/navigation",
+    "test:chromium": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:webkit": "playwright test --project=webkit",
+    "test:mobile": "playwright test --project=Mobile-Chrome",
+    "allure:generate": "allure generate allure-results --clean -o reports/allure-report",
+    "allure:open": "allure open reports/allure-report",
+    "allure:report": "npm run allure:generate && npm run allure:open",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "playwright",
+    "typescript",
+    "automation",
+    "qa",
+    "allure"
+  ],
+  "author": "Senior QA Automation Engineer",
+  "license": "ISC",
+  "devDependencies": {
+    "@faker-js/faker": "^9.5.1",
+    "@playwright/test": "^1.51.0",
+    "@types/node": "^22.13.9",
+    "allure-commandline": "^2.32.2",
+    "allure-playwright": "^3.2.0",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.21.0",
+    "prettier": "^3.5.2",
+    "typescript": "^5.8.2"
+  }
+}

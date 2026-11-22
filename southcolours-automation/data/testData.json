@@ -1,0 +1,19 @@
+{
+  "urls": {
+    "home": "/",
+    "products": "/products",
+    "cart": "/cart",
+    "checkout": "/checkout",
+    "login": "/auth/login",
+    "register": "/auth/register",
+    "orders": "/orders",
+    "wishlist": "/wishlist",
+    "admin": "/admin/dashboard"
+  },
+  "messages": {
+    "loginRequired": "Please sign in",
+    "emptyCart": "Your Cart is Empty",
+    "invalidCredentials": "Invalid email or password",
+    "orderSuccess": "Order Placed Successfully"
+  }
+}
