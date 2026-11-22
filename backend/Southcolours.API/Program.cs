@@ -146,8 +146,38 @@ app.UseAuthorization();
 // Map all ASP.NET Core API Controllers
 app.MapControllers();
 
-// Health check endpoint for Render
-app.MapGet("/", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0" }));
+// Health check endpoint
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0" }));
+app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0" }));
+
+// 7b. Serve Single-Page Application (Angular) Static Files
+// Priority 1: Published wwwroot folder (production/VPS)
+// Priority 2: Local development build dist folder
+var wwwrootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+var devDistPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "../../frontend/southcolours-angular/dist/southcolours-angular/browser"));
+
+string? spaStaticPath = null;
+if (Directory.Exists(wwwrootPath) && File.Exists(Path.Combine(wwwrootPath, "index.html")))
+{
+    spaStaticPath = wwwrootPath;
+}
+else if (Directory.Exists(devDistPath) && File.Exists(Path.Combine(devDistPath, "index.html")))
+{
+    spaStaticPath = devDistPath;
+}
+
+if (!string.IsNullOrEmpty(spaStaticPath))
+{
+    var fileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(spaStaticPath);
+    app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = fileProvider });
+    app.UseStaticFiles(new StaticFileOptions { FileProvider = fileProvider });
+    app.MapFallbackToFile("index.html", new StaticFileOptions { FileProvider = fileProvider });
+}
+else
+{
+    // Fallback if no frontend build is found
+    app.MapGet("/", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0", note = "Frontend build not detected. Serve dist or wwwroot." }));
+}
 
 // Diagnostic database seeder endpoint
 app.MapGet("/api/seed", async (ApplicationDbContext context, UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager) =>
