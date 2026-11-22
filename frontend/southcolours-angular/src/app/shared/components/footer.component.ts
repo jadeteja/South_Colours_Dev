@@ -38,10 +38,11 @@ import { RouterModule } from '@angular/router';
         <div class="footer-col">
           <h4>Customer Care</h4>
           <ul>
+            <li><a routerLink="/about">About Us</a></li>
             <li><a routerLink="/orders">Track Order</a></li>
             <li><a routerLink="/returns">Returns & Refunds</a></li>
             <li><a routerLink="/shipping">Shipping Policy</a></li>
-            <li><a routerLink="/contact">Contact Support</a></li>
+            <li><a routerLink="/about">Contact Support</a></li>
           </ul>
         </div>
 

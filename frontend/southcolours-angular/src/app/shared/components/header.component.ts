@@ -202,6 +202,7 @@ import { Product } from '../../core/models/ecommerce.models';
           <a routerLink="/products" [queryParams]="{ category: 'ethnic-wear' }" routerLinkActive="active" class="highlight" (click)="closeMobileMenu()">Ethnic Wear</a>
           <a routerLink="/products" [queryParams]="{ filter: 'new-arrivals' }" routerLinkActive="active" (click)="closeMobileMenu()">New Arrivals</a>
           <a routerLink="/products" [queryParams]="{ filter: 'offers' }" routerLinkActive="active" class="offers" (click)="closeMobileMenu()">Offers</a>
+          <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()">About Us</a>
         </div>
       </nav>
       @if (isMobileMenuOpen) {

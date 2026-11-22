@@ -9,7 +9,10 @@ import { OrdersComponent } from './features/orders/orders.component';
 import { WishlistComponent } from './features/wishlist/wishlist.component';
 import { LoginComponent } from './features/auth/login.component';
 import { RegisterComponent } from './features/auth/register.component';
+import { ProfileComponent } from './features/profile/profile.component';
+import { AboutComponent } from './features/about/about.component';
 import { adminGuard } from './core/guards/admin.guard';
+import { authGuard } from './core/guards/auth.guard';
 
 import { AdminAddProductComponent } from './features/admin/admin-add-product.component';
 import { AdminEditProductComponent } from './features/admin/admin-edit-product.component';
@@ -33,6 +36,12 @@ export const routes: Routes = [
   { path: 'checkout', component: CheckoutComponent },
   { path: 'order-confirmation', component: OrderConfirmationComponent },
   { path: 'orders', component: OrdersComponent },
+  { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+  { path: 'about', component: AboutComponent },
+  { path: 'about-us', redirectTo: 'about', pathMatch: 'full' },
+  { path: 'contact', redirectTo: 'about', pathMatch: 'full' },
+  { path: 'addresses', redirectTo: 'profile?tab=addresses', pathMatch: 'full' },
+  { path: 'payments', redirectTo: 'profile?tab=cards', pathMatch: 'full' },
   { path: 'wishlist', component: WishlistComponent },
 
   // Auth Routes
