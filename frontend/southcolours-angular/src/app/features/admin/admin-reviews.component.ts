@@ -131,45 +131,14 @@ export class AdminReviewsComponent implements OnInit {
           const total = this.reviews.reduce((acc, r) => acc + (r.rating || 5), 0);
           this.avgRating = (total / this.reviews.length).toFixed(1);
         } else {
-          // Default initial set for moderation demonstration
-          this.reviews = [
-            {
-              id: 'rev-1',
-              productName: 'Pink Lehenga Set',
-              customerName: 'Priya Sharma',
-              rating: 5,
-              title: 'Superb quality and stitch!',
-              comment: 'The embroidery is stunning and the pure cotton lining kept my 4yo daughter comfortable all evening.',
-              date: '18 Oct 2026',
-              isVerifiedPurchase: true,
-              isApproved: true
-            },
-            {
-              id: 'rev-2',
-              productName: 'Yellow Anarkali',
-              customerName: 'Ananya Rao',
-              rating: 5,
-              title: 'Vibrant festival outfit',
-              comment: 'Color is even better than in the photo. Quick delivery within 3 days to Hyderabad.',
-              date: '16 Oct 2026',
-              isVerifiedPurchase: true,
-              isApproved: true
-            },
-            {
-              id: 'rev-3',
-              productName: "Boy's Kurta Set",
-              customerName: 'Karthik V.',
-              rating: 4,
-              title: 'Great fitting kurta',
-              comment: 'Good fabric quality, slightly loose at sleeves but easily altered. Overall very pleased.',
-              date: '14 Oct 2026',
-              isVerifiedPurchase: true,
-              isApproved: false
-            }
-          ];
+          this.reviews = [];
+          this.avgRating = '0.0';
         }
       },
-      error: () => {}
+      error: () => {
+        this.reviews = [];
+        this.avgRating = '0.0';
+      }
     });
   }
 

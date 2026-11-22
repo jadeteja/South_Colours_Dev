@@ -32,7 +32,7 @@ interface OrderRow {
           </div>
           <div class="quick-stats">
             <div class="stat-pill"><span class="pill-label">Total:</span> <strong>{{ orders.length }} Orders</strong></div>
-            <div class="stat-pill"><span class="pill-label">Revenue:</span> <strong class="pink-text">₹ 14,394</strong></div>
+            <div class="stat-pill"><span class="pill-label">Revenue:</span> <strong class="pink-text">₹ {{ totalRevenue() | number }}</strong></div>
           </div>
         </div>
 
@@ -95,6 +95,10 @@ interface OrderRow {
                       <option value="Cancelled">Cancelled</option>
                     </select>
                   </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="9" style="text-align: center; padding: 32px; color: #94A3B8;">No orders found.</td>
                 </tr>
               }
             </tbody>
@@ -289,56 +293,7 @@ export class AdminOrdersComponent implements OnInit {
   selectedStatus = 'All';
   searchTerm = '';
 
-  orders: OrderRow[] = [
-    {
-      id: '1',
-      orderNumber: 'SC123456',
-      date: '12 May 2026',
-      customerName: 'Priya Sharma',
-      phone: '9876543210',
-      city: 'Bangalore',
-      itemsCount: 2,
-      totalAmount: 4398,
-      paymentMethod: 'Razorpay (Card)',
-      status: 'Delivered'
-    },
-    {
-      id: '2',
-      orderNumber: 'SC123321',
-      date: '05 May 2026',
-      customerName: 'Ananya Rao',
-      phone: '9811223344',
-      city: 'Hyderabad',
-      itemsCount: 1,
-      totalAmount: 1599,
-      paymentMethod: 'UPI (GPay)',
-      status: 'Shipped'
-    },
-    {
-      id: '3',
-      orderNumber: 'SC123789',
-      date: '16 May 2026',
-      customerName: 'Deepak Verma',
-      phone: '9988776655',
-      city: 'Chennai',
-      itemsCount: 3,
-      totalAmount: 5897,
-      paymentMethod: 'Cash on Delivery',
-      status: 'Processing'
-    },
-    {
-      id: '4',
-      orderNumber: 'SC123890',
-      date: '18 May 2026',
-      customerName: 'Meenakshi Sundaram',
-      phone: '9765432109',
-      city: 'Coimbatore',
-      itemsCount: 1,
-      totalAmount: 2499,
-      paymentMethod: 'Razorpay (NetBanking)',
-      status: 'Confirmed'
-    }
-  ];
+  orders: OrderRow[] = [];
 
   ngOnInit() {
     this.shopService.getOrders().subscribe({
@@ -347,19 +302,27 @@ export class AdminOrdersComponent implements OnInit {
           this.orders = res.map(o => ({
             id: o.id,
             orderNumber: o.orderNumber,
-            date: new Date(o.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-            customerName: o.shippingAddress?.fullName || 'Customer',
-            phone: o.shippingAddress?.phoneNumber || '-',
-            city: o.shippingAddress?.city || 'Bangalore',
+            date: new Date(o.createdAtUtc || o.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+            customerName: o.shippingName || o.shippingAddress?.fullName || 'Customer',
+            phone: o.shippingPhone || o.shippingAddress?.phoneNumber || '-',
+            city: o.shippingCity || o.shippingAddress?.city || 'Bangalore',
             itemsCount: o.items?.length || 1,
             totalAmount: o.totalAmount,
             paymentMethod: o.paymentMethod || 'Razorpay',
             status: o.status || 'Confirmed'
           }));
+        } else {
+          this.orders = [];
         }
       },
-      error: () => {}
+      error: () => {
+        this.orders = [];
+      }
     });
+  }
+
+  totalRevenue(): number {
+    return this.orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
   }
 
   filteredOrders(): OrderRow[] {

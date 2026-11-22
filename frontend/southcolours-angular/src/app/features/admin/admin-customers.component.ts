@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminLayoutComponent } from '../../shared/components/admin-layout.component';
+import { ShopService } from '../../core/services/shop.service';
 
 interface CustomerRow {
   id: string;
@@ -82,6 +83,10 @@ interface CustomerRow {
                     <button class="view-btn" (click)="viewCustomer(c)">View Profile</button>
                   </td>
                 </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 32px; color: #94A3B8;">No customers registered yet.</td>
+                </tr>
               }
             </tbody>
           </table>
@@ -151,60 +156,40 @@ interface CustomerRow {
   `]
 })
 export class AdminCustomersComponent implements OnInit {
+  shopService = inject(ShopService);
   searchTerm = '';
 
-  customers: CustomerRow[] = [
-    {
-      id: '1',
-      fullName: 'Priya Sharma',
-      email: 'priya.sharma@example.com',
-      phoneNumber: '9876543210',
-      city: 'Bangalore',
-      state: 'Karnataka',
-      joinedDate: '10 Jan 2026',
-      totalOrders: 3,
-      totalSpent: 9896,
-      status: 'Active'
-    },
-    {
-      id: '2',
-      fullName: 'Ananya Rao',
-      email: 'ananya.rao@example.com',
-      phoneNumber: '9811223344',
-      city: 'Hyderabad',
-      state: 'Telangana',
-      joinedDate: '14 Feb 2026',
-      totalOrders: 2,
-      totalSpent: 4298,
-      status: 'Active'
-    },
-    {
-      id: '3',
-      fullName: 'Deepak Verma',
-      email: 'deepak.v@example.com',
-      phoneNumber: '9988776655',
-      city: 'Chennai',
-      state: 'Tamil Nadu',
-      joinedDate: '01 Mar 2026',
-      totalOrders: 4,
-      totalSpent: 12450,
-      status: 'Active'
-    },
-    {
-      id: '4',
-      fullName: 'Meenakshi Sundaram',
-      email: 'meenakshi.s@example.com',
-      phoneNumber: '9765432109',
-      city: 'Coimbatore',
-      state: 'Tamil Nadu',
-      joinedDate: '22 Mar 2026',
-      totalOrders: 1,
-      totalSpent: 2499,
-      status: 'Active'
-    }
-  ];
+  customers: CustomerRow[] = [];
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.loadCustomers();
+  }
+
+  loadCustomers() {
+    this.shopService.getCustomers().subscribe({
+      next: (res: any[]) => {
+        if (res && res.length > 0) {
+          this.customers = res.map(c => ({
+            id: c.id,
+            fullName: c.fullName || 'Customer',
+            email: c.email || '-',
+            phoneNumber: c.phoneNumber || '-',
+            city: c.defaultCity || 'Bangalore',
+            state: c.defaultState || 'Karnataka',
+            joinedDate: c.createdAtUtc ? new Date(c.createdAtUtc).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+            totalOrders: c.totalOrders || 0,
+            totalSpent: c.totalSpent || 0,
+            status: 'Active'
+          }));
+        } else {
+          this.customers = [];
+        }
+      },
+      error: () => {
+        this.customers = [];
+      }
+    });
+  }
 
   get filteredCustomers(): CustomerRow[] {
     const term = this.searchTerm.toLowerCase().trim();

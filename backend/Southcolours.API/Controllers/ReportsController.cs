@@ -33,28 +33,18 @@ public class ReportsController : ControllerBase
         var totalGst = orders.Sum(o => o.TaxAmount);
         var netRevenue = orders.Sum(o => o.TotalAmount);
 
-        // Calculate fallback/simulated base if no real orders yet
-        if (totalOrders == 0)
-        {
-            grossSales = 584320m;
-            totalDiscounts = 42600m;
-            totalGst = 27086m;
-            netRevenue = 514634m;
-            totalOrders = 384;
-        }
-
-        // Product sales performance
+        // Real aggregates with 0 default when no orders exist yet
         var products = await _db.Products
             .Where(p => !p.IsDeleted)
             .OrderByDescending(p => p.SellingPrice)
             .Take(10)
             .ToListAsync();
 
-        var productSales = products.Select((p, idx) =>
+        var productSales = products.Select(p =>
         {
-            var units = 120 - (idx * 9);
+            var units = orders.SelectMany(o => o.Items).Where(i => i.ProductId == p.Id).Sum(i => i.Quantity);
             var gross = units * p.SellingPrice;
-            var refunds = idx % 2 == 0 ? 0m : p.SellingPrice;
+            var refunds = 0m;
             var net = gross - refunds;
             return new
             {
@@ -66,7 +56,7 @@ public class ReportsController : ControllerBase
                 Refunds = refunds,
                 Net = net
             };
-        }).ToList();
+        }).Where(ps => ps.Units > 0).ToList();
 
         return Ok(new
         {

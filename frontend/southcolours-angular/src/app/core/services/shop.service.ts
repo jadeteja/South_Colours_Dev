@@ -117,6 +117,12 @@ export class ShopService {
     return `${this.apiUrl}/reports/export/csv`;
   }
 
+  // Customers Management
+  getCustomers(search?: string): Observable<any[]> {
+    const url = search ? `${this.apiUrl}/customers?search=${encodeURIComponent(search)}` : `${this.apiUrl}/customers`;
+    return this.http.get<any[]>(url);
+  }
+
   // Settings
   getSettings(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/settings`);

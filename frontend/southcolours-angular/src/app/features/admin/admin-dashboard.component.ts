@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AdminLayoutComponent } from '../../shared/components/admin-layout.component';
+import { ShopService } from '../../core/services/shop.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -22,8 +23,8 @@ import { AdminLayoutComponent } from '../../shared/components/admin-layout.compo
               <span class="kpi-label">Today's Sales</span>
               <span class="kpi-icon">💰</span>
             </div>
-            <div class="kpi-value">₹ 28,490</div>
-            <div class="kpi-trend positive">↑ 14% vs yesterday</div>
+            <div class="kpi-value">₹ {{ stats.todaySales | number }}</div>
+            <div class="kpi-trend" [class.positive]="stats.todaySales > 0">Live from verified orders</div>
           </div>
 
           <div class="kpi-card">
@@ -31,8 +32,8 @@ import { AdminLayoutComponent } from '../../shared/components/admin-layout.compo
               <span class="kpi-label">Monthly Revenue</span>
               <span class="kpi-icon">📈</span>
             </div>
-            <div class="kpi-value">₹ 4,82,650</div>
-            <div class="kpi-trend positive">↑ 22% vs last month</div>
+            <div class="kpi-value">₹ {{ stats.monthlyRevenue | number }}</div>
+            <div class="kpi-trend" [class.positive]="stats.monthlyRevenue > 0">Current month total</div>
           </div>
 
           <div class="kpi-card">
@@ -40,8 +41,8 @@ import { AdminLayoutComponent } from '../../shared/components/admin-layout.compo
               <span class="kpi-label">Total Orders</span>
               <span class="kpi-icon">🛒</span>
             </div>
-            <div class="kpi-value">184</div>
-            <div class="kpi-trend">8 pending fulfillment</div>
+            <div class="kpi-value">{{ stats.totalOrders }}</div>
+            <div class="kpi-trend">{{ stats.pendingOrders }} pending fulfillment</div>
           </div>
 
           <div class="kpi-card">
@@ -49,8 +50,8 @@ import { AdminLayoutComponent } from '../../shared/components/admin-layout.compo
               <span class="kpi-label">Total Products</span>
               <span class="kpi-icon">👗</span>
             </div>
-            <div class="kpi-value">10 Active</div>
-            <div class="kpi-trend">6 size variants / item</div>
+            <div class="kpi-value">{{ stats.totalProducts }} Active</div>
+            <div class="kpi-trend">In database catalog</div>
           </div>
         </div>
 
@@ -60,18 +61,14 @@ import { AdminLayoutComponent } from '../../shared/components/admin-layout.compo
           <div class="card-chart">
             <h3 class="chart-title">Best-Selling Categories</h3>
             <div class="category-bars">
-              <div class="bar-row">
-                <div class="bar-labels"><span>Girls Ethnic Wear</span> <span>62%</span></div>
-                <div class="bar-track"><div class="bar-fill" style="width: 62%; background: #FF4081;"></div></div>
-              </div>
-              <div class="bar-row">
-                <div class="bar-labels"><span>Boys Kurtas & Sets</span> <span>24%</span></div>
-                <div class="bar-track"><div class="bar-fill" style="width: 24%; background: #1976D2;"></div></div>
-              </div>
-              <div class="bar-row">
-                <div class="bar-labels"><span>Baby Wear Rompers</span> <span>14%</span></div>
-                <div class="bar-track"><div class="bar-fill" style="width: 14%; background: #FFA000;"></div></div>
-              </div>
+              @for (cat of topCategories; track cat.name) {
+                <div class="bar-row">
+                  <div class="bar-labels"><span>{{ cat.name }}</span> <span>{{ cat.percentage }}%</span></div>
+                  <div class="bar-track"><div class="bar-fill" [style.width.%]="cat.percentage" [style.background]="cat.color"></div></div>
+                </div>
+              } @empty {
+                <div style="color: #94A3B8; font-size: 13px; text-align: center; padding: 24px;">No order data available yet.</div>
+              }
             </div>
           </div>
 
@@ -82,26 +79,20 @@ import { AdminLayoutComponent } from '../../shared/components/admin-layout.compo
               <a routerLink="/admin/orders" class="view-link">View All →</a>
             </div>
             <div class="recent-list">
-              <div class="recent-item">
-                <div class="item-left">
-                  <strong>#SC123456</strong>
-                  <span>Priya Sharma • Bangalore</span>
+              @for (order of recentOrders; track order.id) {
+                <div class="recent-item">
+                  <div class="item-left">
+                    <strong>#{{ order.orderNumber }}</strong>
+                    <span>{{ order.customerName }} • {{ order.city }}</span>
+                  </div>
+                  <div class="item-right">
+                    <span class="amt">₹ {{ order.totalAmount | number }}</span>
+                    <span class="badge" [ngClass]="order.status.toLowerCase()">{{ order.status }}</span>
+                  </div>
                 </div>
-                <div class="item-right">
-                  <span class="amt">₹ 4,398</span>
-                  <span class="badge delivered">Delivered</span>
-                </div>
-              </div>
-              <div class="recent-item">
-                <div class="item-left">
-                  <strong>#SC123321</strong>
-                  <span>Ananya Rao • Hyderabad</span>
-                </div>
-                <div class="item-right">
-                  <span class="amt">₹ 1,599</span>
-                  <span class="badge shipped">Shipped</span>
-                </div>
-              </div>
+              } @empty {
+                <div style="color: #94A3B8; font-size: 13px; text-align: center; padding: 24px;">No recent transactions.</div>
+              }
             </div>
           </div>
         </div>
@@ -287,4 +278,55 @@ import { AdminLayoutComponent } from '../../shared/components/admin-layout.compo
     }
   `]
 })
-export class AdminDashboardComponent {}
+export class AdminDashboardComponent implements OnInit {
+  shopService = inject(ShopService);
+
+  stats = {
+    todaySales: 0,
+    monthlyRevenue: 0,
+    totalOrders: 0,
+    pendingOrders: 0,
+    totalProducts: 0
+  };
+
+  topCategories: { name: string; percentage: number; color: string }[] = [];
+  recentOrders: any[] = [];
+
+  ngOnInit() {
+    this.loadData();
+  }
+
+  loadData() {
+    this.shopService.getProducts().subscribe({
+      next: (res) => {
+        this.stats.totalProducts = res.totalItems || res.items?.length || 0;
+      },
+      error: () => {}
+    });
+
+    this.shopService.getOrders().subscribe({
+      next: (orders: any[]) => {
+        if (orders && orders.length > 0) {
+          this.stats.totalOrders = orders.length;
+          this.stats.pendingOrders = orders.filter(o => o.status === 'Pending' || o.status === 'Processing' || o.status === 'Confirmed').length;
+          this.stats.monthlyRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+          
+          const today = new Date().toDateString();
+          this.stats.todaySales = orders
+            .filter(o => new Date(o.createdAtUtc || o.createdAt).toDateString() === today)
+            .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+          this.recentOrders = orders.slice(0, 5).map(o => ({
+            id: o.id,
+            orderNumber: o.orderNumber,
+            customerName: o.shippingName || o.shippingAddress?.fullName || 'Customer',
+            city: o.shippingCity || o.shippingAddress?.city || 'India',
+            totalAmount: o.totalAmount,
+            status: o.status || 'Confirmed'
+          }));
+        }
+      },
+      error: () => {}
+    });
+  }
+}
