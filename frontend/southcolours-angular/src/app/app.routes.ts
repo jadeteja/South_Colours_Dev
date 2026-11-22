@@ -11,6 +11,7 @@ import { LoginComponent } from './features/auth/login.component';
 import { RegisterComponent } from './features/auth/register.component';
 import { ProfileComponent } from './features/profile/profile.component';
 import { AboutComponent } from './features/about/about.component';
+import { PrivacyPolicyComponent } from './features/legal/privacy-policy.component';
 import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 
@@ -40,6 +41,8 @@ export const routes: Routes = [
   { path: 'about', component: AboutComponent },
   { path: 'about-us', redirectTo: 'about', pathMatch: 'full' },
   { path: 'contact', redirectTo: 'about', pathMatch: 'full' },
+  { path: 'privacy', component: PrivacyPolicyComponent },
+  { path: 'privacy-policy', redirectTo: 'privacy', pathMatch: 'full' },
   { path: 'addresses', redirectTo: 'profile?tab=addresses', pathMatch: 'full' },
   { path: 'payments', redirectTo: 'profile?tab=cards', pathMatch: 'full' },
   { path: 'wishlist', component: WishlistComponent },
