@@ -1,0 +1,31 @@
+@page
+@model Southcolours.Installation.Pages.Setup.InstallModel
+@{
+    ViewData["Title"] = "Step 3: Installation Execution";
+    ViewData["Step"] = "3";
+}
+
+<h2>3. Installation Execution</h2>
+<p>Running automated SQL Server provisioning, migrations, reference seed, and administrator setup.</p>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">
+        <h4>Installation Failed</h4>
+        <p>@Model.ErrorMessage</p>
+        <p>Check logs for sanitized diagnostics. You may retry after resolving the target issue.</p>
+        <a asp-page="/Setup/Review" class="btn btn-primary" style="margin-top:12px;">&larr; Return to Review</a>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <h4>Setup in Progress or Ready to Run</h4>
+        <p>Target: <strong>@Model.DatabaseName</strong></p>
+        <p>Administrator: <strong>@Model.AdminEmail</strong></p>
+    </div>
+
+    <form method="post">
+        <button type="submit" class="btn btn-success" style="font-size:1.1rem; padding:12px 24px;">Run Installation Now &rarr;</button>
+    </form>
+}

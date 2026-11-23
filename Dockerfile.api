@@ -7,6 +7,7 @@ COPY backend/Southcolours.slnx ./backend/
 COPY backend/Southcolours.Domain/Southcolours.Domain.csproj ./backend/Southcolours.Domain/
 COPY backend/Southcolours.Application/Southcolours.Application.csproj ./backend/Southcolours.Application/
 COPY backend/Southcolours.Infrastructure/Southcolours.Infrastructure.csproj ./backend/Southcolours.Infrastructure/
+COPY backend/Southcolours.Installation/Southcolours.Installation.csproj ./backend/Southcolours.Installation/
 COPY backend/Southcolours.Persistence/Southcolours.Persistence.csproj ./backend/Southcolours.Persistence/
 COPY backend/Southcolours.API/Southcolours.API.csproj ./backend/Southcolours.API/
 COPY backend/Southcolours.Tests/Southcolours.Tests.csproj ./backend/Southcolours.Tests/

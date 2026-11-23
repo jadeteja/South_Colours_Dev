@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Southcolours.Domain.Entities;
+using Southcolours.Persistence.Installation;
 
 namespace Southcolours.Persistence.Context;
 
@@ -31,9 +32,23 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
     public DbSet<Banner> Banners => Set<Banner>();
 
+    public DbSet<InstallationMarker> InstallationMarkers => Set<InstallationMarker>();
+    public DbSet<SeedHistoryEntry> SeedHistoryEntries => Set<SeedHistoryEntry>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+        // Installation Tracking Configuration
+        builder.Entity<InstallationMarker>(b =>
+        {
+            b.HasIndex(m => m.InstallationId).IsUnique();
+        });
+
+        builder.Entity<SeedHistoryEntry>(b =>
+        {
+            b.HasIndex(s => s.SeedId).IsUnique();
+        });
 
         // Monetary precision
         builder.Entity<Product>(b =>

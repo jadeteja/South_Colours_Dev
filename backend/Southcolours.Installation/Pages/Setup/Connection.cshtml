@@ -1,0 +1,54 @@
+@page
+@model Southcolours.Installation.Pages.Setup.ConnectionModel
+@{
+    ViewData["Title"] = "Step 1: SQL Server Connection";
+    ViewData["Step"] = "1";
+}
+
+<h2>Database Connection &amp; Discovery</h2>
+<p class="subtitle">Specify your Microsoft SQL Server instance to discover, validate, or provision the application catalog.</p>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">
+        <strong>Error:</strong> @Model.ErrorMessage
+    </div>
+}
+
+@if (Model.ProbeResult != null)
+{
+    <div class="alert @(Model.ProbeResult.CanConnect ? "alert-info" : "alert-warning")">
+        <h4>Target Discovery Status: @Model.ProbeResult.Classification</h4>
+        <div style="margin-top: 8px; display: grid; grid-template-columns: 140px 1fr; gap: 6px;">
+            <strong>Server Instance:</strong> <span>@Model.ProbeResult.SanitizedServer</span>
+            <strong>Target Database:</strong> <span>@Model.ProbeResult.DatabaseName</span>
+            <strong>Details:</strong> <span>@Model.ProbeResult.Details</span>
+            @if (!string.IsNullOrEmpty(Model.ProbeResult.InstallationId))
+            {
+                <strong>Existing Install:</strong> <span>@Model.ProbeResult.InstallationId</span>
+            }
+        </div>
+    </div>
+}
+
+<form method="post">
+    <div class="form-group">
+        <label for="connectionString">SQL Server Connection String</label>
+        <input type="text" id="connectionString" name="ConnectionString" value="@Model.ConnectionString" class="form-control" required />
+        <small style="display:block; margin-top: 6px; color:#64748b; font-size: 0.85rem;">
+            Default Local: <code>Server=.\SQLEXPRESS;Database=SouthColoursDb;Trusted_Connection=True;TrustServerCertificate=True;</code>
+        </small>
+    </div>
+
+    <div style="display: flex; gap: 14px; margin-top: 32px;">
+        <button type="submit" class="btn btn-primary" formaction="/Setup/Connection?handler=Test">
+            🔍 Test Connection
+        </button>
+        @if (Model.CanProceed)
+        {
+            <button type="submit" class="btn btn-success" formaction="/Setup/Connection?handler=Proceed">
+                Proceed to Review &rarr;
+            </button>
+        }
+    </div>
+</form>
