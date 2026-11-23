@@ -838,77 +838,7 @@ export class HomeComponent implements OnInit {
         this.featuredProducts = res.items.slice(0, 8);
       },
       error: () => {
-        // Fallback realistic items if offline
-        this.featuredProducts = [
-          {
-            id: '1',
-            name: 'Pink Lehenga Set',
-            slug: 'pink-lehenga-set',
-            sku: 'SC00123',
-            shortDescription: 'Beautiful pink lehenga set with intricate floral embroidery',
-            detailedDescription: '',
-            sellingPrice: 2499,
-            originalPrice: 3499,
-            averageRating: 4.8,
-            reviewCount: 24,
-            gender: 1,
-            isFeatured: true,
-            isNewArrival: true,
-            images: [{ id: 'i1', imageUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80', isPrimary: true, displayOrder: 1 }],
-            variants: []
-          },
-          {
-            id: '2',
-            name: 'Yellow Anarkali',
-            slug: 'yellow-anarkali',
-            sku: 'SC00124',
-            shortDescription: 'Festive yellow flared suit',
-            detailedDescription: '',
-            sellingPrice: 1899,
-            originalPrice: 2599,
-            averageRating: 4.9,
-            reviewCount: 36,
-            gender: 1,
-            isFeatured: true,
-            isNewArrival: false,
-            images: [{ id: 'i2', imageUrl: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?auto=format&fit=crop&w=600&q=80', isPrimary: true, displayOrder: 1 }],
-            variants: []
-          },
-          {
-            id: '3',
-            name: 'Purple Lehenga',
-            slug: 'purple-lehenga',
-            sku: 'SC00125',
-            shortDescription: 'Royal mulberry purple lehenga choli',
-            detailedDescription: '',
-            sellingPrice: 2299,
-            originalPrice: 3199,
-            averageRating: 4.7,
-            reviewCount: 18,
-            gender: 1,
-            isFeatured: true,
-            isNewArrival: true,
-            images: [{ id: 'i3', imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80', isPrimary: true, displayOrder: 1 }],
-            variants: []
-          },
-          {
-            id: '4',
-            name: "Boy's Kurta Set",
-            slug: 'boys-kurta-set',
-            sku: 'SC00126',
-            shortDescription: 'Navy blue jacquard silk kurta jacket set',
-            detailedDescription: '',
-            sellingPrice: 1599,
-            originalPrice: 2299,
-            averageRating: 4.8,
-            reviewCount: 42,
-            gender: 2,
-            isFeatured: true,
-            isNewArrival: true,
-            images: [{ id: 'i4', imageUrl: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=600&q=80', isPrimary: true, displayOrder: 1 }],
-            variants: []
-          }
-        ];
+        this.featuredProducts = [];
       }
     });
   }
