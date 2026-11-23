@@ -1,6 +1,12 @@
 {
   "/api": {
-    "target": "http://localhost:5000",
+    "target": "https://localhost:44398",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/Setup": {
+    "target": "https://localhost:44398",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

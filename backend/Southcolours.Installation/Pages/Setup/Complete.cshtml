@@ -1,0 +1,26 @@
+@page
+@model Southcolours.Installation.Pages.Setup.CompleteModel
+@{
+    ViewData["Title"] = "Step 4: Installation Complete";
+    ViewData["Step"] = "4";
+}
+
+<div style="text-align: center; padding: 20px 0;">
+    <div style="font-size: 3.5rem; color: #38a169;">✓</div>
+    <h2 style="color: #276749;">Installation Finalized Successfully!</h2>
+    <p style="font-size: 1.1rem; color: #4a5568;">Your South Colours SQL Server database is fully provisioned, migrated, and ready for production traffic.</p>
+</div>
+
+<div class="alert alert-info" style="margin-top: 24px;">
+    <h4>Installation Summary</h4>
+    <p><strong>Installation ID:</strong> @Model.InstallationId</p>
+    <p><strong>Database:</strong> @Model.DatabaseName</p>
+    <p><strong>Initial Administrator:</strong> @Model.AdminEmail</p>
+    <p><strong>Status:</strong> Ready &amp; Bootstrapped</p>
+</div>
+
+<div style="text-align: center; margin-top: 32px;">
+    <a href="@Model.LoginUrl" class="btn btn-primary" style="font-size: 1.05rem; padding: 12px 28px;">
+        Go to South Colours Login &rarr;
+    </a>
+</div>
