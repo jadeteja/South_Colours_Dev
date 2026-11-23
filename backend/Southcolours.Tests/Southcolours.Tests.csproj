@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -21,6 +21,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Southcolours.API\Southcolours.API.csproj" />
     <ProjectReference Include="..\Southcolours.Application\Southcolours.Application.csproj" />
+    <ProjectReference Include="..\Southcolours.Installation\Southcolours.Installation.csproj" />
+    <ProjectReference Include="..\Southcolours.Persistence\Southcolours.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

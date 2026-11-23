@@ -37,7 +37,8 @@ jobs:
             TARGET="${{ github.event.inputs.target }}"
 
             if [ "$TARGET" = "all" ] || [ "$TARGET" = "backend" ]; then
-              echo "==== Building & Deploying .NET 10 API ===="
+              echo "==== Building & Deploying .NET 10 API and Maintenance Runner ===="
+              dotnet publish /root/South_Colours_Dev/backend/Southcolours.Installation/Southcolours.Installation.csproj -c Release -o /var/www/southcolours/installer
               dotnet publish /root/South_Colours_Dev/backend/Southcolours.API/Southcolours.API.csproj -c Release -o /var/www/southcolours/api
               systemctl restart southcolours-api
               echo "Backend deployed successfully!"

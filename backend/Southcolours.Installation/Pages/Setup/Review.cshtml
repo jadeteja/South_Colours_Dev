@@ -1,0 +1,63 @@
+@page
+@model Southcolours.Installation.Pages.Setup.ReviewModel
+@{
+    ViewData["Title"] = "Step 2: Review & Configuration";
+    ViewData["Step"] = "2";
+}
+
+<h2>2. Plan Review & Initial Administrator Setup</h2>
+<p>Verify deployment target and configure the initial SuperAdmin account.</p>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">
+        <strong>Validation Error:</strong> @Model.ErrorMessage
+    </div>
+}
+
+<div class="alert alert-info">
+    <h4>Deployment Target Plan</h4>
+    <p><strong>Target Database:</strong> @Model.DatabaseName on @Model.ServerName</p>
+    <p><strong>Target Classification:</strong> @Model.Classification</p>
+    <p><strong>Planned Action:</strong> @Model.PlannedAction</p>
+</div>
+
+<form method="post">
+    @if (Model.Classification == "InstalledCatalog")
+    {
+        <div class="alert alert-warning">
+            <h4>Existing Installation Found</h4>
+            <p>An installation already exists for this database. If you wish to re-bootstrap or perform an approved clean replacement, explicit approval is required below.</p>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="ApprovedReplacement" value="true" />
+                    <strong>I confirm and explicitly approve replacement / clean setup.</strong>
+                </label>
+            </div>
+        </div>
+    }
+
+    <h3>Initial Administrator Credentials</h3>
+    <div class="form-group">
+        <label for="adminEmail">Administrator Email</label>
+        <input type="email" id="adminEmail" name="AdminEmail" value="@Model.AdminEmail" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label for="adminPassword">Administrator Password</label>
+        <input type="password" id="adminPassword" name="AdminPassword" class="form-control" required />
+        <small style="color:#718096;">Must be at least 6 characters with at least one numeric digit.</small>
+    </div>
+
+    <div class="form-group">
+        <label>
+            <input type="checkbox" asp-for="SeedSampleCatalog" />
+            <strong>Seed Starter Catalog (Categories, Products, Banners)</strong>
+        </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <a asp-page="/Setup/Connection" class="btn" style="background:#e2e8f0; color:#2d3748;">&larr; Back</a>
+        <button type="submit" class="btn btn-success">Approve &amp; Start Installation &rarr;</button>
+    </div>
+</form>

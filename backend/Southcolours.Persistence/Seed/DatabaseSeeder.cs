@@ -7,14 +7,25 @@ using Microsoft.EntityFrameworkCore;
 using Southcolours.Domain.Entities;
 using Southcolours.Domain.Enums;
 using Southcolours.Persistence.Context;
+using Southcolours.Persistence.Installation;
 
 namespace Southcolours.Persistence.Seed;
 
 public static class DatabaseSeeder
 {
-    public static async Task SeedAsync(ApplicationDbContext context, UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+    public const string SeedVersion = "1.0.0";
+    public const string RoleSeedId = "SEED_ROLES_CORE";
+    public const string SampleDataSeedId = "SEED_SAMPLE_CATALOG";
+
+    public static async Task SeedRolesAsync(ApplicationDbContext context, RoleManager<IdentityRole> roleManager, string? operationId = null)
     {
-        // 1. Roles
+        // 1. Roles ledger check
+        var existingSeed = await context.SeedHistoryEntries.FirstOrDefaultAsync(s => s.SeedId == RoleSeedId);
+        if (existingSeed != null)
+        {
+            return;
+        }
+
         string[] roles = ["SuperAdmin", "ProductManager", "OrderManager", "Customer"];
         foreach (var role in roles)
         {
@@ -24,22 +35,22 @@ public static class DatabaseSeeder
             }
         }
 
-        // 2. Default Admin
-        var adminEmail = "admin@southcolours.com";
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-        if (adminUser == null)
+        context.SeedHistoryEntries.Add(new SeedHistoryEntry
         {
-            adminUser = new IdentityUser
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                EmailConfirmed = true
-            };
-            var createRes = await userManager.CreateAsync(adminUser, "Admin@South123#");
-            if (createRes.Succeeded)
-            {
-                await userManager.AddToRoleAsync(adminUser, "SuperAdmin");
-            }
+            SeedId = RoleSeedId,
+            Version = SeedVersion,
+            AppliedAtUtc = DateTime.UtcNow,
+            OperationId = operationId
+        });
+        await context.SaveChangesAsync();
+    }
+
+    public static async Task SeedSampleCatalogAsync(ApplicationDbContext context, string? operationId = null)
+    {
+        var existingSeed = await context.SeedHistoryEntries.FirstOrDefaultAsync(s => s.SeedId == SampleDataSeedId);
+        if (existingSeed != null)
+        {
+            return;
         }
 
         // 3. Categories & Subcategories matching Southcolours reference image
@@ -569,6 +580,16 @@ public static class DatabaseSeeder
             context.Banners.AddRange(heroBanner, ethnicBanner, boysBanner);
             await context.SaveChangesAsync();
         }
+
+        // Record sample data seed completion in ledger
+        context.SeedHistoryEntries.Add(new SeedHistoryEntry
+        {
+            SeedId = SampleDataSeedId,
+            Version = SeedVersion,
+            AppliedAtUtc = DateTime.UtcNow,
+            OperationId = operationId
+        });
+        await context.SaveChangesAsync();
     }
 }
 
