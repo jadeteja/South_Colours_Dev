@@ -16,49 +16,57 @@ import { Banner } from '../../core/models/ecommerce.models';
           <h1 class="page-title">Homepage Banners</h1>
           <p class="page-sub">Configure promotional campaigns, hero slides, and CTA buttons on the customer storefront.</p>
         </div>
-        <button class="btn-primary" (click)="showModal = true">+ Create New Banner</button>
+        <button class="btn-primary" (click)="openCreateModal()">+ Create New Banner</button>
       </div>
 
-      <!-- Add Banner Modal -->
+      <!-- Add/Edit Banner Modal -->
       @if (showModal) {
         <div class="modal-overlay" (click)="showModal = false">
           <div class="modal-card" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h2>Create Promotional Banner</h2>
+              <h2>{{ isEditing ? 'Edit Promotional Banner' : 'Create Promotional Banner' }}</h2>
               <button class="close-btn" (click)="showModal = false">✕</button>
             </div>
             <div class="modal-body">
               <div class="form-group">
                 <label>Banner Title *</label>
-                <input type="text" [(ngModel)]="newBanner.title" placeholder="e.g. Festive Collection" class="form-control" />
+                <input type="text" [(ngModel)]="bannerForm.title" placeholder="e.g. Festive Collection" class="form-control" />
               </div>
               <div class="form-group">
                 <label>Subtitle / Offer Text</label>
-                <input type="text" [(ngModel)]="newBanner.subtitle" placeholder="e.g. Up to 40% Off on Ethnic Sets" class="form-control" />
+                <input type="text" [(ngModel)]="bannerForm.subtitle" placeholder="e.g. Up to 40% Off on Ethnic Sets" class="form-control" />
               </div>
               <div class="form-group">
                 <label>Image URL *</label>
-                <input type="text" [(ngModel)]="newBanner.imageUrl" placeholder="https://..." class="form-control" />
+                <input type="text" [(ngModel)]="bannerForm.imageUrl" placeholder="https://..." class="form-control" />
               </div>
               <div class="form-row">
                 <div class="form-group col">
                   <label>CTA Button Text</label>
-                  <input type="text" [(ngModel)]="newBanner.buttonText" placeholder="Shop Now" class="form-control" />
+                  <input type="text" [(ngModel)]="bannerForm.buttonText" placeholder="Shop Now" class="form-control" />
                 </div>
                 <div class="form-group col">
                   <label>Target Link</label>
-                  <input type="text" [(ngModel)]="newBanner.linkUrl" placeholder="/products?category=ethnic" class="form-control" />
+                  <input type="text" [(ngModel)]="bannerForm.linkUrl" placeholder="/products?category=ethnic" class="form-control" />
                 </div>
               </div>
-              <div class="form-group">
-                <label>Display Position Order</label>
-                <input type="number" [(ngModel)]="newBanner.displayOrder" class="form-control" />
+              <div class="form-row">
+                <div class="form-group col">
+                  <label>Display Position Order</label>
+                  <input type="number" [(ngModel)]="bannerForm.displayOrder" class="form-control" />
+                </div>
+                <div class="form-group col checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" [(ngModel)]="bannerForm.isActive" />
+                    <span>Live / Active</span>
+                  </label>
+                </div>
               </div>
             </div>
             <div class="modal-footer">
               <button class="btn-cancel" (click)="showModal = false">Cancel</button>
-              <button class="btn-primary" [disabled]="!newBanner.title || !newBanner.imageUrl || isSaving" (click)="saveBanner()">
-                {{ isSaving ? 'Saving...' : 'Save Banner' }}
+              <button class="btn-primary" [disabled]="!bannerForm.title || !bannerForm.imageUrl || isSaving" (click)="saveBanner()">
+                {{ isSaving ? 'Saving...' : (isEditing ? 'Update Banner' : 'Save Banner') }}
               </button>
             </div>
           </div>
@@ -80,8 +88,11 @@ import { Banner } from '../../core/models/ecommerce.models';
                 <span class="link-target">Target: <code>{{ b.linkUrl }}</code></span>
               </div>
               <div class="card-actions">
-                <button class="delete-btn" (click)="deleteBanner(b.id)">Delete</button>
-                <span class="status-live">Live</span>
+                <div class="action-buttons">
+                  <button class="edit-btn" (click)="openEditModal(b)">Edit</button>
+                  <button class="delete-btn" (click)="deleteBanner(b.id)">Delete</button>
+                </div>
+                <span [class]="b.isActive ? 'status-live' : 'status-inactive'">{{ b.isActive ? 'Live' : 'Inactive' }}</span>
               </div>
             </div>
           </div>
@@ -109,10 +120,15 @@ import { Banner } from '../../core/models/ecommerce.models';
       .banner-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4; }
       .banner-meta { font-size: 12px; color: #64748B; margin-bottom: 16px; display: flex; flex-direction: column; gap: 4px; }
       .card-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F1F5F9; padding-top: 12px;
+        .action-buttons { display: flex; align-items: center; gap: 12px; }
+        .edit-btn { background: transparent; color: #2563EB; font-weight: 700; border: none; cursor: pointer;
+          &:hover { text-decoration: underline; }
+        }
         .delete-btn { background: transparent; color: #EF4444; font-weight: 700; border: none; cursor: pointer;
           &:hover { text-decoration: underline; }
         }
         .status-live { background: #DCFCE7; color: #166534; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; }
+        .status-inactive { background: #F1F5F9; color: #64748B; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; }
       }
     }
     .empty-state { grid-column: 1 / -1; background: #FFFFFF; border-radius: 14px; border: 1px dashed #CBD5E1; padding: 48px; text-align: center; color: #94A3B8; }
@@ -127,6 +143,8 @@ import { Banner } from '../../core/models/ecommerce.models';
       label { font-size: 12px; font-weight: 700; color: #475569; }
     }
     .form-row { display: flex; gap: 12px; .col { flex: 1; } }
+    .checkbox-group { justify-content: flex-end; }
+    .checkbox-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer; height: 38px; }
     .form-control { border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 12px; font-size: 13px; outline: none;
       &:focus { border-color: var(--primary-pink); }
     }
@@ -152,14 +170,18 @@ export class AdminBannersComponent implements OnInit {
   banners: any[] = [];
 
   showModal = false;
+  isEditing = false;
+  editingId: string | null = null;
   isSaving = false;
-  newBanner = {
+
+  bannerForm = {
     title: '',
     subtitle: '',
     imageUrl: '',
     buttonText: 'Shop Now',
     linkUrl: '/products',
-    displayOrder: 1
+    displayOrder: 1,
+    isActive: true
   };
 
   ngOnInit() {
@@ -173,27 +195,64 @@ export class AdminBannersComponent implements OnInit {
     });
   }
 
+  openCreateModal() {
+    this.isEditing = false;
+    this.editingId = null;
+    this.bannerForm = {
+      title: '',
+      subtitle: '',
+      imageUrl: '',
+      buttonText: 'Shop Now',
+      linkUrl: '/products',
+      displayOrder: this.banners.length + 1,
+      isActive: true
+    };
+    this.showModal = true;
+  }
+
+  openEditModal(banner: any) {
+    this.isEditing = true;
+    this.editingId = banner.id;
+    this.bannerForm = {
+      title: banner.title || '',
+      subtitle: banner.subtitle || '',
+      imageUrl: banner.imageUrl || '',
+      buttonText: banner.buttonText || 'Shop Now',
+      linkUrl: banner.linkUrl || '/products',
+      displayOrder: banner.displayOrder || 1,
+      isActive: banner.isActive !== false
+    };
+    this.showModal = true;
+  }
+
   saveBanner() {
     this.isSaving = true;
-    this.shopService.createBanner(this.newBanner).subscribe({
-      next: () => {
-        this.isSaving = false;
-        this.showModal = false;
-        this.newBanner = {
-          title: '',
-          subtitle: '',
-          imageUrl: '',
-          buttonText: 'Shop Now',
-          linkUrl: '/products',
-          displayOrder: 1
-        };
-        this.loadBanners();
-      },
-      error: (err) => {
-        this.isSaving = false;
-        alert(err.error?.message || 'Error saving banner');
-      }
-    });
+
+    if (this.isEditing && this.editingId) {
+      this.shopService.updateBanner(this.editingId, this.bannerForm).subscribe({
+        next: () => {
+          this.isSaving = false;
+          this.showModal = false;
+          this.loadBanners();
+        },
+        error: (err) => {
+          this.isSaving = false;
+          alert(err.error?.message || 'Error updating banner');
+        }
+      });
+    } else {
+      this.shopService.createBanner(this.bannerForm).subscribe({
+        next: () => {
+          this.isSaving = false;
+          this.showModal = false;
+          this.loadBanners();
+        },
+        error: (err) => {
+          this.isSaving = false;
+          alert(err.error?.message || 'Error saving banner');
+        }
+      });
+    }
   }
 
   deleteBanner(id: string) {

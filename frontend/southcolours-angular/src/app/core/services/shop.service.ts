@@ -77,6 +77,10 @@ export class ShopService {
     return this.http.post<any>(`${this.apiUrl}/banners`, payload);
   }
 
+  updateBanner(id: string, payload: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/banners/${id}`, payload);
+  }
+
   deleteBanner(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/banners/${id}`);
   }

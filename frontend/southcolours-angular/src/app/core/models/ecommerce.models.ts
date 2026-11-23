@@ -67,6 +67,8 @@ export interface Banner {
   imageUrl: string;
   linkUrl?: string;
   buttonText: string;
+  displayOrder?: number;
+  isActive?: boolean;
 }
 
 export interface CartItemModel {

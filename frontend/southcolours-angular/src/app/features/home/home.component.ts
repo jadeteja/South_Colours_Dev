@@ -125,37 +125,29 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
         </div>
       </section>
 
-      <!-- 3. Dual Promotional Banners Matching Screen 1 -->
-      <section class="promo-banners-section">
-        <div class="container promo-grid">
-          <!-- Girls Ethnic Wear Card -->
-          <div class="promo-card promo-ethnic">
-            <div class="promo-content">
-              <h2 class="promo-title">Beautiful<br><span class="highlight">Ethnic Wear</span><br>for Little Ones</h2>
-              <a routerLink="/products" [queryParams]="{ category: 'ethnic-wear' }" class="btn-primary promo-btn">
-                Explore Ethnic Wear →
-              </a>
-            </div>
-            <div class="promo-img-wrapper">
-              <img src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80" alt="Little girl ethnic wear" class="promo-img">
-            </div>
+      <!-- 3. Dynamic Promotional Banners -->
+      @if (promoBanners.length > 0) {
+        <section class="promo-banners-section">
+          <div class="container promo-grid" [class.single-banner]="promoBanners.length === 1">
+            @for (banner of promoBanners; track banner.id || $index; let idx = $index) {
+              <div class="promo-card" [ngClass]="idx % 2 === 0 ? 'promo-theme-pink' : 'promo-theme-blue'">
+                <div class="promo-content">
+                  <h2 class="promo-title">{{ banner.title }}</h2>
+                  @if (banner.subtitle) {
+                    <p class="promo-sub">{{ banner.subtitle }}</p>
+                  }
+                  <a [routerLink]="banner.linkUrl || '/products'" class="btn-primary promo-btn" [class.blue-btn]="idx % 2 !== 0">
+                    {{ banner.buttonText || 'Shop Now' }} →
+                  </a>
+                </div>
+                <div class="promo-img-wrapper">
+                  <img [src]="banner.imageUrl" [alt]="banner.title" class="promo-img">
+                </div>
+              </div>
+            }
           </div>
-
-          <!-- Boys Collection Card -->
-          <div class="promo-card promo-boys">
-            <div class="promo-content">
-              <h2 class="promo-title">Trendy<br><span class="highlight-blue">Boys Collection</span></h2>
-              <p class="promo-sub">Comfort Meets Style</p>
-              <a routerLink="/products" [queryParams]="{ category: 'boys' }" class="btn-primary blue-btn promo-btn">
-                Shop Boys →
-              </a>
-            </div>
-            <div class="promo-img-wrapper">
-              <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=600&q=80" alt="Boy in kurta jacket set" class="promo-img">
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      }
 
       <!-- 4. Featured Ethnic Wear Showcase Matching Screen 1 & 2 -->
       <section class="featured-section">
@@ -475,7 +467,7 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
       }
     }
 
-    /* Dual Promotional Banners */
+    /* Dynamic Promotional Banners */
     .promo-banners-section {
       padding: 20px 0 40px;
     }
@@ -483,6 +475,11 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 24px;
+      &.single-banner {
+        grid-template-columns: 1fr;
+        max-width: 800px;
+        margin: 0 auto;
+      }
     }
     .promo-card {
       border-radius: 24px;
@@ -493,19 +490,13 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
       overflow: hidden;
       position: relative;
     }
-    .promo-ethnic {
+    .promo-theme-pink {
       background: linear-gradient(135deg, #FFF0F5 0%, #FFD6E7 100%);
       border: 1px solid #F3DCE5;
-      .highlight {
-        color: var(--primary-pink);
-      }
     }
-    .promo-boys {
+    .promo-theme-blue {
       background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
       border: 1px solid #BBDEFB;
-      .highlight-blue {
-        color: #1976D2;
-      }
       .blue-btn {
         background: linear-gradient(135deg, #1976D2 0%, #0D47A1 100%);
         box-shadow: 0 4px 15px rgba(25, 118, 210, 0.35);
@@ -516,6 +507,7 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
       line-height: 1.2;
       color: var(--dark-navy);
       margin-bottom: 12px;
+      white-space: pre-line;
     }
     .promo-sub {
       font-size: 14px;
@@ -831,8 +823,19 @@ export class HomeComponent implements OnInit {
   ];
 
   featuredProducts: Product[] = [];
+  promoBanners: Banner[] = [];
 
   ngOnInit() {
+    this.shopService.getBanners().subscribe({
+      next: (banners) => {
+        // Display all active banners configured in admin / DB
+        this.promoBanners = banners || [];
+      },
+      error: () => {
+        this.promoBanners = [];
+      }
+    });
+
     this.shopService.getProducts().subscribe({
       next: (res) => {
         this.featuredProducts = res.items.slice(0, 8);
