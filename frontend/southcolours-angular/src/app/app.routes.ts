@@ -9,6 +9,7 @@ import { OrdersComponent } from './features/orders/orders.component';
 import { WishlistComponent } from './features/wishlist/wishlist.component';
 import { LoginComponent } from './features/auth/login.component';
 import { RegisterComponent } from './features/auth/register.component';
+import { ForgotPasswordComponent } from './features/auth/forgot-password.component';
 import { ProfileComponent } from './features/profile/profile.component';
 import { AboutComponent } from './features/about/about.component';
 import { PrivacyPolicyComponent } from './features/legal/privacy-policy.component';
@@ -58,6 +59,7 @@ export const routes: Routes = [
   // Auth Routes
   { path: 'auth/login', component: LoginComponent },
   { path: 'auth/register', component: RegisterComponent },
+  { path: 'auth/forgot-password', component: ForgotPasswordComponent },
 
   // Admin Portal Routes (Protected by adminGuard)
   { path: 'admin', redirectTo: 'admin/dashboard', pathMatch: 'full' },

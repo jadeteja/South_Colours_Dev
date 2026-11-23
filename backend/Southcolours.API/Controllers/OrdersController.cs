@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Southcolours.Application.Interfaces;
 using Southcolours.Domain.Entities;
 using Southcolours.Domain.Enums;
 using Southcolours.Persistence.Context;
@@ -15,10 +17,17 @@ namespace Southcolours.API.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
+    private readonly IEmailService _emailService;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public OrdersController(ApplicationDbContext db)
+    public OrdersController(
+        ApplicationDbContext db,
+        IEmailService emailService,
+        UserManager<IdentityUser> userManager)
     {
         _db = db;
+        _emailService = emailService;
+        _userManager = userManager;
     }
 
     [HttpGet]
@@ -130,6 +139,36 @@ public class OrdersController : ControllerBase
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
 
+        // Send confirmation email for Cash on Delivery orders immediately
+        if (isCod)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    string? customerEmail = null;
+                    if (!string.IsNullOrEmpty(request.UserId) && request.UserId != "guest")
+                    {
+                        var user = await _userManager.FindByIdAsync(request.UserId);
+                        customerEmail = user?.Email;
+                    }
+
+                    var itemsList = order.Items.Select(i => (i.ProductName, i.Quantity, i.UnitPrice)).ToList();
+
+                    if (!string.IsNullOrEmpty(customerEmail))
+                    {
+                        await _emailService.SendOrderConfirmationAsync(customerEmail, order.OrderNumber, order.TotalAmount, itemsList);
+                    }
+
+                    await _emailService.SendAdminNotificationAsync(
+                        $"New COD Order #{order.OrderNumber}",
+                        $"Order #{order.OrderNumber} placed by {order.ShippingName} for amount INR {order.TotalAmount:F2}."
+                    );
+                }
+                catch { }
+            });
+        }
+
         return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
     }
 
@@ -156,6 +195,30 @@ public class OrdersController : ControllerBase
         });
 
         await _db.SaveChangesAsync();
+
+        // Notify customer of order status update
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(order.UserId) && order.UserId != "guest")
+                {
+                    var user = await _userManager.FindByIdAsync(order.UserId);
+                    if (user?.Email != null)
+                    {
+                        await _emailService.SendOrderStatusUpdateAsync(
+                            user.Email,
+                            order.OrderNumber,
+                            order.Status.ToString(),
+                            order.TrackingNumber,
+                            order.CourierName
+                        );
+                    }
+                }
+            }
+            catch { }
+        });
+
         return Ok(order);
     }
 }

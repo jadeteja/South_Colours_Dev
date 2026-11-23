@@ -3,9 +3,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Southcolours.API.Health;
+using Southcolours.API.Middleware;
+using Southcolours.Application.Common.Settings;
+using Southcolours.Application.Interfaces;
 using Southcolours.Infrastructure.Payments;
+using Southcolours.Infrastructure.Services;
+using Southcolours.Installation.Operations;
 using Southcolours.Persistence.Context;
-using Southcolours.Persistence.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,7 +67,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }
     else
     {
-        options.UseSqlServer(connectionString, b => b.MigrationsAssembly("Southcolours.Persistence"));
+        options.UseSqlServer(connectionString, b =>
+        {
+            b.MigrationsAssembly("Southcolours.Persistence");
+            b.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorNumbersToAdd: null);
+        });
     }
 });
 
@@ -83,6 +95,10 @@ var rzpKey = builder.Configuration["Razorpay:KeyId"] ?? "rzp_test_placeholder_ke
 var rzpSecret = builder.Configuration["Razorpay:KeySecret"] ?? "rzp_test_placeholder_secret";
 var rzpWebhook = builder.Configuration["Razorpay:WebhookSecret"] ?? "southcolours_webhook_secret_placeholder";
 builder.Services.AddSingleton<IRazorpayService>(new RazorpayService(rzpKey, rzpSecret, rzpWebhook));
+
+// 3.1 SMTP Email Service
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 // 4. JWT Authentication
 var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "SouthColours_SuperSecure_SecretKey_2026_KidsFashionApp!";
@@ -134,24 +150,55 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
+// Register Database Readiness Services
+builder.Services.AddScoped<IDatabaseReadinessCheck, DatabaseReadinessCheck>();
+
+// Register Wizard Razor Pages and Installation Services
+builder.Services.AddRazorPages();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(20);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+builder.Services.AddSingleton<IInstallationStateStore, InstallationStateStore>();
+builder.Services.AddScoped<InstallationRunner>();
+builder.Services.AddScoped<RecoveryRunner>();
+
 var app = builder.Build();
 
 // 7. HTTP Pipeline
+app.UseSession();
+
+// Register database readiness gating middleware at the very top so root / is redirected to wizard when uninstalled
+app.UseMiddleware<DatabaseReadinessMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseCors("AllowAngular");
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Map Wizard Razor Pages
+app.MapRazorPages();
+app.MapGet("/setup", () => Results.Redirect("/Setup/Connection"));
 
 // Map all ASP.NET Core API Controllers
 app.MapControllers();
 
-// Health check endpoint
+// Health check endpoint (Liveness & Database Readiness)
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0" }));
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0" }));
+app.MapGet("/api/health/ready", async (IDatabaseReadinessCheck readinessCheck, CancellationToken ct) =>
+{
+    var res = await readinessCheck.CheckReadinessAsync(ct);
+    return res.IsReady ? Results.Ok(res) : Results.Json(res, statusCode: StatusCodes.Status503ServiceUnavailable);
+});
 
 // 7b. Serve Uploaded Static Media Files (/uploads/*)
 // Cross-Platform: Reads UPLOADS_PATH env var on Linux VPS or falls back to wwwroot/uploads
@@ -200,55 +247,6 @@ else
 {
     // Fallback if no frontend build is found
     app.MapGet("/", () => Results.Ok(new { status = "healthy", service = "Southcolours API", version = "1.0", note = "Frontend build not detected. Serve dist or wwwroot." }));
-}
-
-// Diagnostic database seeder endpoint
-app.MapGet("/api/seed", async (ApplicationDbContext context, UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager) =>
-{
-    try
-    {
-        await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
-        var catCount = await context.Categories.CountAsync();
-        var prodCount = await context.Products.CountAsync();
-        var bannerCount = await context.Banners.CountAsync();
-        var couponCount = await context.Coupons.CountAsync();
-        return Results.Ok(new 
-        { 
-            success = true, 
-            categories = catCount, 
-            products = prodCount, 
-            banners = bannerCount,
-            coupons = couponCount,
-            message = "Database seeded successfully!" 
-        });
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem(detail: ex.ToString(), title: "Database Seeding Error");
-    }
-});
-
-// 8. Automatic Migration & Seed on Startup
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var logger = services.GetRequiredService<ILogger<Program>>();
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        logger.LogInformation("Applying migrations and ensuring database is created...");
-        await context.Database.MigrateAsync();
-
-        logger.LogInformation("Database tables ready. Starting seeding...");
-        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
-        logger.LogInformation("Database seeding completed successfully.");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "An error occurred during database migration/seeding.");
-    }
 }
 
 app.Run();

@@ -51,7 +51,7 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="form-group">
             <div class="label-row">
               <label>Password</label>
-              <a href="javascript:void(0)" class="forgot-link">Forgot?</a>
+              <a routerLink="/auth/forgot-password" class="forgot-link">Forgot?</a>
             </div>
             <input 
               type="password" 

@@ -39,3 +39,14 @@ public record VerifyPaymentRequest(
     Guid InternalOrderId
 );
 
+public record ForgotPasswordRequest(
+    [Required, EmailAddress] string Email
+);
+
+public record ResetPasswordOtpRequest(
+    [Required, EmailAddress] string Email,
+    [Required] string Otp,
+    [Required, MinLength(6)] string NewPassword
+);
+
+

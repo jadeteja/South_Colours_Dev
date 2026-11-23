@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Southcolours.Application.DTOs;
+using Southcolours.Application.Interfaces;
 using Southcolours.Domain.Entities;
 using Southcolours.Persistence.Context;
 
@@ -19,17 +20,20 @@ public class AuthController : ControllerBase
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly IConfiguration _configuration;
     private readonly ApplicationDbContext _dbContext;
+    private readonly IEmailService _emailService;
 
     public AuthController(
         UserManager<IdentityUser> userManager,
         SignInManager<IdentityUser> signInManager,
         IConfiguration configuration,
-        ApplicationDbContext dbContext)
+        ApplicationDbContext dbContext,
+        IEmailService emailService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _configuration = configuration;
         _dbContext = dbContext;
+        _emailService = emailService;
     }
 
     [HttpPost("register")]
@@ -65,6 +69,17 @@ public class AuthController : ControllerBase
         };
         _dbContext.CustomerProfiles.Add(profile);
         await _dbContext.SaveChangesAsync();
+
+        // Send welcome email asynchronously
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _emailService.SendWelcomeEmailAsync(request.Email, request.FullName);
+                await _emailService.SendAdminNotificationAsync("New Customer Registered", $"A new user '{request.FullName}' ({request.Email}) just registered.");
+            }
+            catch { }
+        });
 
         var token = await GenerateJwtTokenAsync(user);
         return Ok(new AuthResponse(
@@ -117,6 +132,66 @@ public class AuthController : ControllerBase
             Email = user.Email,
             Roles = roles
         });
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+            return BadRequest(new { Message = "Email is required." });
+
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null)
+        {
+            // Do not reveal whether user exists for security
+            return Ok(new { Message = "If an account with that email exists, a reset code has been sent." });
+        }
+
+        // Generate a 6-digit OTP token
+        var random = new Random();
+        var otp = random.Next(100000, 999999).ToString();
+
+        // In Identity, GenerateUserTokenAsync with DataProtectorTokenProvider or custom provider
+        await _userManager.SetAuthenticationTokenAsync(user, "Default", "PasswordResetOtp", otp);
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _emailService.SendPasswordResetOtpAsync(user.Email!, otp);
+            }
+            catch { }
+        });
+
+        return Ok(new { Message = "If an account with that email exists, a reset code has been sent." });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordOtpRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Otp) || string.IsNullOrWhiteSpace(request.NewPassword))
+            return BadRequest(new { Message = "Email, OTP, and New Password are required." });
+
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null)
+            return BadRequest(new { Message = "Invalid request or token." });
+
+        var storedOtp = await _userManager.GetAuthenticationTokenAsync(user, "Default", "PasswordResetOtp");
+        if (string.IsNullOrEmpty(storedOtp) || storedOtp != request.Otp)
+        {
+            return BadRequest(new { Message = "Invalid or expired verification code." });
+        }
+
+        var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await _userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        // Clear used token
+        await _userManager.RemoveAuthenticationTokenAsync(user, "Default", "PasswordResetOtp");
+
+        return Ok(new { Message = "Password has been reset successfully. You can now log in." });
     }
 
     private async Task<string> GenerateJwtTokenAsync(IdentityUser user)

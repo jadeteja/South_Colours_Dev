@@ -1,6 +1,9 @@
 using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Southcolours.Application.DTOs;
+using Southcolours.Application.Interfaces;
 using Southcolours.Domain.Entities;
 using Southcolours.Domain.Enums;
 using Southcolours.Infrastructure.Payments;
@@ -14,11 +17,19 @@ public class PaymentsController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly IRazorpayService _razorpayService;
+    private readonly IEmailService _emailService;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public PaymentsController(ApplicationDbContext db, IRazorpayService razorpayService)
+    public PaymentsController(
+        ApplicationDbContext db,
+        IRazorpayService razorpayService,
+        IEmailService emailService,
+        UserManager<IdentityUser> userManager)
     {
         _db = db;
         _razorpayService = razorpayService;
+        _emailService = emailService;
+        _userManager = userManager;
     }
 
     [HttpGet("razorpay/key")]
@@ -60,7 +71,10 @@ public class PaymentsController : ControllerBase
             return BadRequest(new { Message = "Invalid payment signature." });
         }
 
-        var order = await _db.Orders.FindAsync(request.InternalOrderId);
+        var order = await _db.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == request.InternalOrderId);
+
         if (order != null)
         {
             order.Status = OrderStatus.Confirmed;
@@ -79,6 +93,33 @@ public class PaymentsController : ControllerBase
             });
 
             await _db.SaveChangesAsync();
+
+            // Send order confirmation email asynchronously
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    string? customerEmail = null;
+                    if (!string.IsNullOrEmpty(order.UserId) && order.UserId != "guest")
+                    {
+                        var user = await _userManager.FindByIdAsync(order.UserId);
+                        customerEmail = user?.Email;
+                    }
+
+                    var itemsList = order.Items.Select(i => (i.ProductName, i.Quantity, i.UnitPrice)).ToList();
+
+                    if (!string.IsNullOrEmpty(customerEmail))
+                    {
+                        await _emailService.SendOrderConfirmationAsync(customerEmail, order.OrderNumber, order.TotalAmount, itemsList);
+                    }
+
+                    await _emailService.SendAdminNotificationAsync(
+                        $"Order #{order.OrderNumber} Paid & Confirmed",
+                        $"Payment of INR {order.TotalAmount:F2} verified for Order #{order.OrderNumber} placed by {order.ShippingName}."
+                    );
+                }
+                catch { }
+            });
         }
 
         return Ok(new { Message = "Payment verified successfully", Confirmed = true });
