@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ShopService } from '../../core/services/shop.service';
 
 @Component({
   selector: 'app-invoice-modal',
@@ -156,14 +157,21 @@ import { CommonModule } from '@angular/common';
                   <td>Shipping Fee:</td>
                   <td class="text-right">{{ (order?.shippingFee === 0 || !order?.shippingFee) ? 'FREE' : '₹ ' + (order.shippingFee | number:'1.2-2') }}</td>
                 </tr>
-                <tr>
-                  <td>CGST (2.5%):</td>
-                  <td class="text-right">₹ {{ getGstHalf() | number:'1.2-2' }}</td>
-                </tr>
-                <tr>
-                  <td>SGST (2.5%):</td>
-                  <td class="text-right">₹ {{ getGstHalf() | number:'1.2-2' }}</td>
-                </tr>
+                @if (getGstHalfRate() > 0) {
+                  <tr>
+                    <td>CGST ({{ getGstHalfRate() }}%):</td>
+                    <td class="text-right">₹ {{ getGstHalf() | number:'1.2-2' }}</td>
+                  </tr>
+                  <tr>
+                    <td>SGST ({{ getGstHalfRate() }}%):</td>
+                    <td class="text-right">₹ {{ getGstHalf() | number:'1.2-2' }}</td>
+                  </tr>
+                } @else {
+                  <tr>
+                    <td>Taxes (CGST / SGST):</td>
+                    <td class="text-right">₹ 0.00</td>
+                  </tr>
+                }
                 <tr class="grand-total-row">
                   <td><strong>Grand Total:</strong></td>
                   <td class="text-right"><strong>₹ {{ (order?.totalAmount || 0) | number:'1.2-2' }}</strong></td>
@@ -483,9 +491,26 @@ import { CommonModule } from '@angular/common';
     }
   `]
 })
-export class InvoiceModalComponent {
+export class InvoiceModalComponent implements OnInit {
   @Input() order: any;
   @Output() close = new EventEmitter<void>();
+
+  private shopService = inject(ShopService);
+  gstPercentage = 0;
+
+  ngOnInit() {
+    this.shopService.getSettings().subscribe({
+      next: (res: any) => {
+        if (res && res.defaultGstRate !== undefined) {
+          const raw = String(res.defaultGstRate).replace('%', '').trim();
+          this.gstPercentage = parseFloat(raw) || 0;
+        }
+      },
+      error: () => {
+        this.gstPercentage = 0;
+      }
+    });
+  }
 
   formatDate(dateVal: any): string {
     if (!dateVal) return new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -505,10 +530,15 @@ export class InvoiceModalComponent {
     return 'COMPLETED';
   }
 
+  getGstHalfRate(): number {
+    return Math.round((this.gstPercentage / 2) * 100) / 100;
+  }
+
   getGstHalf(): number {
+    if (this.gstPercentage <= 0) return 0;
     const total = this.order?.totalAmount || 0;
-    // Assume 5% inclusive GST (2.5% CGST + 2.5% SGST)
-    return Math.round((total * 0.025) * 100) / 100;
+    const halfRate = this.gstPercentage / 2;
+    return Math.round((total * (halfRate / 100)) * 100) / 100;
   }
 
   printInvoice() {
