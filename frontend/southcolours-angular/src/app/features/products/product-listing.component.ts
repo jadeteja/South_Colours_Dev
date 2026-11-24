@@ -108,19 +108,6 @@ import { Product } from '../../core/models/ecommerce.models';
               <span>₹ {{ maxPrice | number }}</span>
             </div>
           </div>
-
-          <!-- Color Swatches -->
-          <div class="filter-card">
-            <h3 class="filter-header">Color</h3>
-            <div class="color-swatches">
-              <button class="color-dot" style="background-color: #FF4081;" title="Pink"></button>
-              <button class="color-dot" style="background-color: #FDD835;" title="Yellow"></button>
-              <button class="color-dot" style="background-color: #7B1FA2;" title="Purple"></button>
-              <button class="color-dot" style="background-color: #00796B;" title="Green"></button>
-              <button class="color-dot" style="background-color: #1976D2;" title="Blue"></button>
-              <button class="color-dot" style="background-color: #D32F2F;" title="Red"></button>
-            </div>
-          </div>
         </aside>
 
         <!-- Main Product Grid & Header Matching Screen 2 -->

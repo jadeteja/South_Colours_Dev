@@ -44,27 +44,46 @@ public class DatabaseReadinessMiddleware
         {
             _logger.LogWarning("Rejecting request to {Path} due to database readiness state: {Status}", path, result.Status);
             
-            // For API requests, return 503 JSON with the setup URL
-            if (path.StartsWith("/api", StringComparison.OrdinalIgnoreCase))
+            // Only direct to setup wizard if the database actually needs installation/bootstrap
+            bool isUninstalled = string.Equals(result.Status, "Installing", StringComparison.OrdinalIgnoreCase);
+
+            if (isUninstalled)
             {
-                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-                context.Response.ContentType = "application/json";
-
-                var response = new
+                // For API requests, return 503 JSON with the setup URL
+                if (path.StartsWith("/api", StringComparison.OrdinalIgnoreCase))
                 {
-                    status = 503,
-                    title = "Service Unavailable",
-                    detail = "The database is not initialized or missing. Redirecting to setup.",
-                    statusCategory = result.Status,
-                    setupUrl = "/Setup/Connection"
-                };
+                    context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                    context.Response.ContentType = "application/json";
 
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+                    var response = new
+                    {
+                        status = 503,
+                        title = "Service Unavailable",
+                        detail = "The database is not initialized or missing. Redirecting to setup.",
+                        statusCategory = result.Status,
+                        setupUrl = "/Setup/Connection"
+                    };
+
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+                    return;
+                }
+
+                // For browser navigation (root, SPA fallback, storefront pages), redirect to the setup wizard
+                context.Response.Redirect("/Setup/Connection");
                 return;
             }
 
-            // For browser navigation (root, SPA fallback, storefront pages), automatically redirect directly to the setup wizard
-            context.Response.Redirect("/Setup/Connection");
+            // For transient connection issues or schema errors when DB is already installed, return 503 without redirecting to setup
+            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            context.Response.ContentType = "application/json";
+            var transientResponse = new
+            {
+                status = 503,
+                title = "Service Temporarily Unavailable",
+                detail = result.FailureReason ?? "The database is temporarily unavailable. Please retry shortly.",
+                statusCategory = result.Status
+            };
+            await context.Response.WriteAsync(JsonSerializer.Serialize(transientResponse));
             return;
         }
 

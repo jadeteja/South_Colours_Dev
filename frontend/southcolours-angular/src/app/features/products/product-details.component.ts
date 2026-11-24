@@ -105,25 +105,6 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
               </div>
             </div>
 
-            <!-- Color Options Matching Screen 3 -->
-            <div class="selector-section">
-              <span class="label">Color: <strong>{{ selectedColor }}</strong></span>
-              <div class="color-options">
-                <button class="color-choice" [class.selected]="selectedColor === 'Pink'" (click)="selectedColor = 'Pink'">
-                  <span class="color-circle" style="background-color: #FF4081;"></span>
-                  <span>Pink</span>
-                </button>
-                <button class="color-choice" [class.selected]="selectedColor === 'Yellow'" (click)="selectedColor = 'Yellow'">
-                  <span class="color-circle" style="background-color: #FDD835;"></span>
-                  <span>Yellow</span>
-                </button>
-                <button class="color-choice" [class.selected]="selectedColor === 'Purple'" (click)="selectedColor = 'Purple'">
-                  <span class="color-circle" style="background-color: #7B1FA2;"></span>
-                  <span>Purple</span>
-                </button>
-              </div>
-            </div>
-
             <!-- Quantity Stepper -->
             <div class="quantity-section">
               <span class="label">Quantity</span>
@@ -214,10 +195,6 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
                         <td class="spec-value">{{ product.material || 'Art Silk Jacquard with Cotton Lining' }}</td>
                       </tr>
                       <tr>
-                        <td class="spec-label">Color:</td>
-                        <td class="spec-value">{{ selectedColor }}</td>
-                      </tr>
-                      <tr>
                         <td class="spec-label">Care Instructions:</td>
                         <td class="spec-value">{{ product.careInstructions || 'Dry Clean Recommended / Gentle Hand Wash' }}</td>
                       </tr>
@@ -254,10 +231,6 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
                       <tr>
                         <td class="spec-label">Lining Material:</td>
                         <td class="spec-value">100% Soft Cotton Inner Lining</td>
-                      </tr>
-                      <tr>
-                        <td class="spec-label">Color:</td>
-                        <td class="spec-value">{{ selectedColor }}</td>
                       </tr>
                       <tr>
                         <td class="spec-label">Pattern / Work:</td>

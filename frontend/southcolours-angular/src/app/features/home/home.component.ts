@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ShopService } from '../../core/services/shop.service';
-import { Product, Banner } from '../../core/models/ecommerce.models';
+import { Product, Banner, Category } from '../../core/models/ecommerce.models';
 
 @Component({
   selector: 'app-home',
@@ -110,20 +110,26 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
       </section>
 
       <!-- 2. Circular Category Pills Matching Screen 1 -->
-      <section class="categories-section">
-        <div class="container">
-          <div class="categories-grid">
-            @for (cat of categories; track cat.name) {
-              <a [routerLink]="['/products']" [queryParams]="{ category: cat.slug }" class="category-circle-item">
-                <div class="circle-avatar" [style.background-color]="cat.bg">
-                  <span class="cat-icon">{{ cat.icon }}</span>
-                </div>
-                <span class="cat-label">{{ cat.name }}</span>
-              </a>
-            }
+      @if (categories.length > 0) {
+        <section class="categories-section">
+          <div class="container">
+            <div class="categories-grid">
+              @for (cat of categories; track cat.id || cat.slug || cat.name; let idx = $index) {
+                <a [routerLink]="['/products']" [queryParams]="{ category: cat.slug }" class="category-circle-item">
+                  <div class="circle-avatar" [style.background-color]="getCategoryBg(idx)">
+                    @if (cat.imageUrl) {
+                      <img [src]="cat.imageUrl" [alt]="cat.name" class="cat-img" />
+                    } @else {
+                      <span class="cat-icon">{{ getCategoryIcon(cat.name, cat.slug) }}</span>
+                    }
+                  </div>
+                  <span class="cat-label">{{ cat.name }}</span>
+                </a>
+              }
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      }
 
       <!-- 3. Dynamic Promotional Banners -->
       @if (promoBanners.length > 0) {
@@ -456,6 +462,13 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
         transition: all 0.25s ease;
         border: 2px solid #FFFFFF;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+      }
+      .cat-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
       }
       .cat-icon {
         font-size: 32px;
@@ -811,21 +824,27 @@ import { Product, Banner } from '../../core/models/ecommerce.models';
 export class HomeComponent implements OnInit {
   shopService = inject(ShopService);
 
-  categories = [
-    { name: 'Girls', slug: 'girls', icon: '👗', bg: '#FFE4E8' },
-    { name: 'Boys', slug: 'boys', icon: '👕', bg: '#E3F2FD' },
-    { name: 'Baby Wear', slug: 'baby-wear', icon: '👶', bg: '#FFF8E1' },
-    { name: 'Ethnic Wear', slug: 'ethnic-wear', icon: '🥻', bg: '#F3E5F5' },
-    { name: 'Dresses', slug: 'dresses', icon: '🎀', bg: '#FCE4EC' },
-    { name: 'Tops', slug: 'tops', icon: '👚', bg: '#E8F5E9' },
-    { name: 'Bottoms', slug: 'bottoms', icon: '👖', bg: '#EDE7F6' },
-    { name: 'New Arrivals', slug: 'new-arrivals', icon: '✨', bg: '#FFF0F5' }
+  categoryColorPalette = [
+    '#FFE4E8', '#E3F2FD', '#FFF8E1', '#F3E5F5',
+    '#FCE4EC', '#E8F5E9', '#EDE7F6', '#FFF0F5',
+    '#E0F2F1', '#FFF3E0', '#F1F8E9', '#FBE9E7'
   ];
 
+  categories: Category[] = [];
   featuredProducts: Product[] = [];
   promoBanners: Banner[] = [];
 
   ngOnInit() {
+    this.shopService.getCategories().subscribe({
+      next: (cats) => {
+        // Show active categories ordered by displayOrder
+        this.categories = (cats || []).filter(c => c.isActive !== false);
+      },
+      error: () => {
+        this.categories = [];
+      }
+    });
+
     this.shopService.getBanners().subscribe({
       next: (banners) => {
         // Display all active banners configured in admin / DB
@@ -844,6 +863,24 @@ export class HomeComponent implements OnInit {
         this.featuredProducts = [];
       }
     });
+  }
+
+  getCategoryBg(index: number): string {
+    return this.categoryColorPalette[index % this.categoryColorPalette.length];
+  }
+
+  getCategoryIcon(name: string, slug?: string): string {
+    const text = (name + ' ' + (slug || '')).toLowerCase();
+    if (text.includes('lehenga') || text.includes('ethnic') || text.includes('saree')) return '🥻';
+    if (text.includes('frock') || text.includes('dress')) return '👗';
+    if (text.includes('kurta') || text.includes('boy')) return '👕';
+    if (text.includes('baby') || text.includes('infant')) return '👶';
+    if (text.includes('combo') || text.includes('family') || text.includes('mother') || text.includes('sister')) return '👨‍👩‍👧';
+    if (text.includes('top') || text.includes('shirt')) return '👚';
+    if (text.includes('bottom') || text.includes('pant') || text.includes('dhoti')) return '👖';
+    if (text.includes('offer') || text.includes('sale') || text.includes('discount')) return '🏷️';
+    if (text.includes('new') || text.includes('arrival')) return '✨';
+    return '🎀';
   }
 
   getDiscountPercent(original: number, selling: number): number {

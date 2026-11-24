@@ -37,8 +37,23 @@ import { Banner } from '../../core/models/ecommerce.models';
                 <input type="text" [(ngModel)]="bannerForm.subtitle" placeholder="e.g. Up to 40% Off on Ethnic Sets" class="form-control" />
               </div>
               <div class="form-group">
-                <label>Image URL *</label>
-                <input type="text" [(ngModel)]="bannerForm.imageUrl" placeholder="https://..." class="form-control" />
+                <label>Image *</label>
+                <div class="upload-box-wrapper">
+                  <div class="upload-input-row">
+                    <input type="text" [(ngModel)]="bannerForm.imageUrl" placeholder="Paste Image URL (https://...) or choose file below" class="form-control" />
+                  </div>
+                  <div class="file-upload-action">
+                    <label class="btn-upload-file">
+                      <input type="file" accept="image/*" (change)="onFileSelected($event)" [disabled]="isUploading" />
+                      <span>{{ isUploading ? 'Uploading Image...' : '📁 Upload Image File' }}</span>
+                    </label>
+                    @if (bannerForm.imageUrl) {
+                      <div class="preview-mini">
+                        <img [src]="bannerForm.imageUrl" alt="Preview" />
+                      </div>
+                    }
+                  </div>
+                </div>
               </div>
               <div class="form-row">
                 <div class="form-group col">
@@ -143,6 +158,31 @@ import { Banner } from '../../core/models/ecommerce.models';
       label { font-size: 12px; font-weight: 700; color: #475569; }
     }
     .form-row { display: flex; gap: 12px; .col { flex: 1; } }
+    .upload-box-wrapper { display: flex; flex-direction: column; gap: 8px; }
+    .file-upload-action { display: flex; align-items: center; gap: 12px; }
+    .btn-upload-file {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 14px;
+      background: #F1F5F9;
+      border: 1px dashed #94A3B8;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.2s;
+      input { display: none; }
+      &:hover { background: #E2E8F0; border-color: var(--primary-pink); color: var(--primary-pink); }
+    }
+    .preview-mini {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #CBD5E1;
+      img { width: 100%; height: 100%; object-fit: cover; }
+    }
     .checkbox-group { justify-content: flex-end; }
     .checkbox-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer; height: 38px; }
     .form-control { border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 12px; font-size: 13px; outline: none;
@@ -173,6 +213,7 @@ export class AdminBannersComponent implements OnInit {
   isEditing = false;
   editingId: string | null = null;
   isSaving = false;
+  isUploading = false;
 
   bannerForm = {
     title: '',
@@ -223,6 +264,24 @@ export class AdminBannersComponent implements OnInit {
       isActive: banner.isActive !== false
     };
     this.showModal = true;
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      this.isUploading = true;
+      this.shopService.uploadImage(file).subscribe({
+        next: (res) => {
+          this.isUploading = false;
+          this.bannerForm.imageUrl = res.url;
+        },
+        error: (err) => {
+          this.isUploading = false;
+          alert(`Image upload failed: ${err.error?.message || err.message}`);
+        }
+      });
+    }
   }
 
   saveBanner() {
