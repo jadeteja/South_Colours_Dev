@@ -11,15 +11,11 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="admin-wrapper">
       <aside class="admin-sidebar" [class.sidebar-open]="isSidebarOpen">
         <div class="sidebar-brand">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF4081" stroke-width="2.2">
-            <circle cx="12" cy="12" r="3" fill="#FF4081"/>
-            <path d="M12 2a4 4 0 0 0-4 4c0 2 2 3 4 3s4-1 4-3a4 4 0 0 0-4-4z" fill="#FFD6E7"/>
-            <path d="M12 22a4 4 0 0 0 4-4c0-2-2-3-4-3s-4 1-4 3a4 4 0 0 0 4 4z" fill="#FFD6E7"/>
-            <path d="M2 12a4 4 0 0 0 4 4c2 0 3-2 3-4s-1-4-3-4a4 4 0 0 0-4 4z" fill="#FFD6E7"/>
-            <path d="M22 12a4 4 0 0 0-4-4c-2 0-3 2-3 4s1 4 3 4a4 4 0 0 0 4-4z" fill="#FFD6E7"/>
-          </svg>
-          <span class="brand-text">Southcolours</span>
-          <span class="panel-tag">| Admin Panel</span>
+          <img src="assets/images/logo.jpg" alt="South Colours Logo" class="admin-logo-img" />
+          <div class="brand-column">
+            <span class="brand-text">South Colours</span>
+            <span class="panel-tag">Admin Panel</span>
+          </div>
           <button class="sidebar-close-btn" (click)="closeSidebar()">✕</button>
         </div>
 
@@ -101,9 +97,11 @@ import { AuthService } from '../../core/services/auth.service';
   styles: [`
     .admin-wrapper { display: flex; min-height: 100vh; background: #F8FAFC; position: relative; }
     .admin-sidebar { width: 250px; background-color: var(--dark-navy); color: #FFFFFF; display: flex; flex-direction: column; flex-shrink: 0; }
-    .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 22px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: relative;
-      .brand-text { font-size: 18px; font-weight: 800; color: var(--primary-pink); }
-      .panel-tag { font-size: 12px; color: #94A3B8; }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: relative;
+      .admin-logo-img { width: 36px; height: 36px; border-radius: 6px; object-fit: contain; background: #FFFFFF; padding: 2px; }
+      .brand-column { display: flex; flex-direction: column; }
+      .brand-text { font-size: 16px; font-weight: 800; color: #FFFFFF; line-height: 1.2; }
+      .panel-tag { font-size: 11px; color: var(--primary-pink); font-weight: 700; letter-spacing: 0.3px; }
       .sidebar-close-btn { display: none; margin-left: auto; background: none; border: none; color: #94A3B8; font-size: 18px; cursor: pointer; padding: 4px; }
     }
     .sidebar-menu { padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto;
