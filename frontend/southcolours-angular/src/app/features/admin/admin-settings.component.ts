@@ -206,7 +206,7 @@ export class AdminSettingsComponent implements OnInit {
 
   settings: any = {
     storeName: 'South Colours',
-    tagline: 'Little Styles, Big Smiles',
+    tagline: 'Enlights our culture',
     operatingCurrency: 'INR (₹)',
     defaultGstRate: '5.0%',
     razorpayKey: 'rzp_test_placeholder_key',

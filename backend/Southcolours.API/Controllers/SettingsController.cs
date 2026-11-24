@@ -51,7 +51,7 @@ public class SettingsController : ControllerBase
             var defaultSettings = new StoreSettings
             {
                 StoreName = "South Colours",
-                Tagline = "Little Styles, Big Smiles",
+                Tagline = "Enlights our culture",
                 OperatingCurrency = "INR (₹)",
                 DefaultGstRate = "5.0%",
                 RazorpayKey = "rzp_test_placeholder_key",
@@ -72,7 +72,7 @@ public class SettingsController : ControllerBase
 public class StoreSettings
 {
     public string StoreName { get; set; } = "South Colours";
-    public string Tagline { get; set; } = "Little Styles, Big Smiles";
+    public string Tagline { get; set; } = "Enlights our culture";
     public string OperatingCurrency { get; set; } = "INR (₹)";
     public string DefaultGstRate { get; set; } = "5.0%";
     public string RazorpayKey { get; set; } = "rzp_test_placeholder_key";

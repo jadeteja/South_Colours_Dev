@@ -35,7 +35,7 @@ import { Product } from '../../core/models/ecommerce.models';
               <img src="assets/images/logo.jpg" alt="Southcolours Logo" class="brand-logo-img" />
               <div class="logo-text">
                 <span class="brand-title">Southcolours</span>
-                <span class="brand-tagline">Little Styles, Big Smiles</span>
+                <span class="brand-tagline">Enlights our culture</span>
               </div>
             </a>
           </div>

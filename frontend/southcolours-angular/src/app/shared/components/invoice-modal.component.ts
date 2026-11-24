@@ -32,7 +32,7 @@ import { CommonModule } from '@angular/common';
           <div class="inv-header">
             <div class="inv-brand">
               <h1 class="inv-logo">Southcolours</h1>
-              <p class="inv-tagline">Little Styles, Big Smiles</p>
+              <p class="inv-tagline">Enlights our culture</p>
               <p class="inv-company-info">
                 Southcolours Kids Wear<br />
                 Bangalore, Karnataka, India<br />

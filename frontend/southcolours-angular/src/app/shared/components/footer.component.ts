@@ -12,7 +12,7 @@ import { RouterModule } from '@angular/router';
         <div class="footer-col brand-col">
           <div class="logo-group">
             <span class="brand-title">Southcolours</span>
-            <span class="brand-tagline">Little Styles, Big Smiles</span>
+            <span class="brand-tagline">Enlights our culture</span>
           </div>
           <p class="brand-desc">
             Premium Indian ethnic wear and trendy outfits thoughtfully crafted for your little ones with breathable fabrics and joy.

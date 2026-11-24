@@ -14,7 +14,7 @@ import { Title, Meta } from '@angular/platform-browser';
         <div class="container hero-container">
           <div class="hero-badge">
             <span class="sparkle-icon">✨</span>
-            <span>Little Styles, Big Smiles</span>
+            <span>Enlights our culture</span>
           </div>
           <h1 class="hero-title">Crafting Joy & Elegance with <span class="gradient-text">SouthColours</span></h1>
           <p class="hero-subtitle">
@@ -655,7 +655,7 @@ export class AboutComponent implements OnInit {
   constructor(private titleService: Title, private metaService: Meta) {}
 
   ngOnInit() {
-    this.titleService.setTitle('About Us | SouthColours - Little Styles, Big Smiles');
+    this.titleService.setTitle('About Us | SouthColours - Enlights our culture');
     this.metaService.updateTag({
       name: 'description',
       content: 'Learn more about SouthColours, our passionate commitment to premium kids and ethnic wear, 600+ happy customers, and stylish quality fashion collections.'

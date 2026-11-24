@@ -23,7 +23,7 @@ import { AuthService } from '../../core/services/auth.service';
             </svg>
           </div>
           <h1 class="brand-title">Southcolours</h1>
-          <p class="brand-tagline">Little Styles, Big Smiles</p>
+          <p class="brand-tagline">Enlights our culture</p>
         </div>
 
         @if (step === 1) {

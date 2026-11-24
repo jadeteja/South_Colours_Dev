@@ -1103,7 +1103,7 @@ export class CheckoutComponent implements OnInit {
                 amount: order.totalAmount * 100,
                 currency: 'INR',
                 name: 'South Colours',
-                description: 'Little Styles, Big Smiles',
+                description: 'Enlights our culture',
                 image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=120&q=80',
                 order_id: rzpOrder.razorpayOrderId,
                 handler: (response: any) => {
