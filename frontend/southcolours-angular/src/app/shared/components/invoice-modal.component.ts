@@ -531,11 +531,15 @@ export class InvoiceModalComponent implements OnInit {
   }
 
   getGstHalfRate(): number {
+    if (this.order?.taxAmount === 0 || this.gstPercentage <= 0) return 0;
     return Math.round((this.gstPercentage / 2) * 100) / 100;
   }
 
   getGstHalf(): number {
-    if (this.gstPercentage <= 0) return 0;
+    if (this.order?.taxAmount === 0 || this.gstPercentage <= 0) return 0;
+    if (this.order?.taxAmount && this.order.taxAmount > 0) {
+      return Math.round((this.order.taxAmount / 2) * 100) / 100;
+    }
     const total = this.order?.totalAmount || 0;
     const halfRate = this.gstPercentage / 2;
     return Math.round((total * (halfRate / 100)) * 100) / 100;

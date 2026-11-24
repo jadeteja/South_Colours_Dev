@@ -834,6 +834,7 @@ export class CheckoutComponent implements OnInit {
 
   addresses: DeliveryAddress[] = [];
   selectedAddressId = '';
+  gstRate = 0;
 
   // Modal State
   showAddressModal = false;
@@ -862,6 +863,17 @@ export class CheckoutComponent implements OnInit {
 
   ngOnInit() {
     this.loadSavedAddresses();
+    this.shopService.getSettings().subscribe({
+      next: (res: any) => {
+        if (res && res.defaultGstRate !== undefined) {
+          const raw = String(res.defaultGstRate).replace('%', '').trim();
+          this.gstRate = parseFloat(raw) || 0;
+        }
+      },
+      error: () => {
+        this.gstRate = 0;
+      }
+    });
   }
 
   loadSavedAddresses() {
@@ -1029,7 +1041,7 @@ export class CheckoutComponent implements OnInit {
       subTotal: this.shopService.cartSubtotal(),
       discountAmount: this.shopService.cartDiscount(),
       shippingFee: this.shopService.shippingFee(),
-      taxAmount: Math.round(this.shopService.cartSubtotal() * 0.05),
+      taxAmount: this.gstRate > 0 ? Math.round(this.shopService.cartSubtotal() * (this.gstRate / 100)) : 0,
       totalAmount: this.shopService.cartTotal(),
       couponCode: this.shopService.appliedCouponCode() || null,
       shippingName: currentAddr.name,
