@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminLayoutComponent } from '../../shared/components/admin-layout.component';
 import { ShopService } from '../../core/services/shop.service';
+import { ToastService } from '../../core/services/toast.service';
 
 interface OrderRow {
   id: string;
@@ -16,6 +17,8 @@ interface OrderRow {
   totalAmount: number;
   paymentMethod: string;
   status: string;
+  trackingNumber?: string;
+  courierName?: string;
 }
 
 @Component({
@@ -87,13 +90,28 @@ interface OrderRow {
                     </span>
                   </td>
                   <td>
-                    <select [(ngModel)]="order.status" class="status-select">
-                      <option value="Confirmed">Confirmed</option>
-                      <option value="Processing">Processing</option>
-                      <option value="Shipped">Shipped</option>
-                      <option value="Delivered">Delivered</option>
-                      <option value="Cancelled">Cancelled</option>
-                    </select>
+                    <div class="action-cell">
+                      <select [ngModel]="order.status" (ngModelChange)="onStatusChange(order, $event)" class="status-select">
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+
+                      <a 
+                        [href]="getWhatsAppUrl(order)" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        class="wa-btn" 
+                        [class.disabled]="!hasValidPhone(order.phone)"
+                        [title]="hasValidPhone(order.phone) ? 'Send WhatsApp Update to ' + order.customerName : 'No phone number available'">
+                        <svg class="wa-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                          <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.11 7.44C8.95 7.44 8.68 7.5 8.46 7.74C8.23 7.97 7.61 8.56 7.61 9.76C7.61 10.96 8.49 12.12 8.61 12.28C8.73 12.44 10.32 14.91 12.79 15.97C14.84 16.85 15.26 16.67 15.71 16.63C16.15 16.59 17.14 16.04 17.35 15.46C17.55 14.87 17.55 14.37 17.49 14.27C17.43 14.16 17.27 14.1 17.03 13.98C16.8 13.86 15.65 13.3 15.43 13.22C15.22 13.14 15.07 13.1 14.92 13.33C14.77 13.56 14.34 14.07 14.21 14.22C14.08 14.37 13.95 14.39 13.72 14.27C13.49 14.16 12.74 13.91 11.85 13.12C11.16 12.5 10.69 11.74 10.56 11.52C10.43 11.29 10.55 11.17 10.66 11.05C10.77 10.94 10.91 10.76 11.03 10.62C11.15 10.47 11.19 10.37 11.27 10.21C11.35 10.06 11.31 9.92 11.25 9.8C11.19 9.69 10.69 8.46 10.48 7.96C10.28 7.47 10.07 7.54 9.92 7.53C9.77 7.52 9.61 7.52 9.44 7.52L9.11 7.44Z"/>
+                        </svg>
+                        <span>WhatsApp</span>
+                      </a>
+                    </div>
                   </td>
                 </tr>
               } @empty {
@@ -245,12 +263,44 @@ interface OrderRow {
         &.confirmed { background: #F3E8FF; color: #6B21A8; }
         &.cancelled { background: #FEE2E2; color: #991B1B; }
       }
+      .action-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
       .status-select {
         padding: 6px 10px;
         border-radius: 6px;
         border: 1px solid #CBD5E1;
         font-size: 12px;
         outline: none;
+      }
+      .wa-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 10px;
+        background: #25D366;
+        color: #FFFFFF;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.15s ease, transform 0.1s ease;
+        white-space: nowrap;
+        &:hover {
+          background: #1EBE5D;
+          transform: translateY(-1px);
+        }
+        &.disabled {
+          background: #CBD5E1;
+          color: #64748B;
+          pointer-events: none;
+          cursor: not-allowed;
+        }
+        .wa-icon {
+          flex-shrink: 0;
+        }
       }
     }
 
@@ -290,6 +340,7 @@ interface OrderRow {
 })
 export class AdminOrdersComponent implements OnInit {
   shopService = inject(ShopService);
+  toastService = inject(ToastService);
   selectedStatus = 'All';
   searchTerm = '';
 
@@ -322,7 +373,9 @@ export class AdminOrdersComponent implements OnInit {
             itemsCount: o.items?.length || 1,
             totalAmount: o.totalAmount,
             paymentMethod: this.formatPaymentMethod(o.paymentMethod),
-            status: this.formatStatus(o.status)
+            status: this.formatStatus(o.status),
+            trackingNumber: o.trackingNumber,
+            courierName: o.courierName
           }));
         } else {
           this.orders = [];
@@ -351,5 +404,64 @@ export class AdminOrdersComponent implements OnInit {
         o.city.toLowerCase().includes(term);
       return matchesStatus && matchesSearch;
     });
+  }
+
+  onStatusChange(order: OrderRow, newStatus: string) {
+    if (!order || order.status === newStatus) return;
+
+    const previousStatus = order.status;
+    order.status = newStatus;
+
+    this.shopService.updateOrderFulfillment(order.id, {
+      status: newStatus,
+      courierName: order.courierName || '',
+      trackingNumber: order.trackingNumber || '',
+      comments: `Status updated to ${newStatus} by Admin`
+    }).subscribe({
+      next: () => {
+        this.toastService.success(
+          `Order #${order.orderNumber} status successfully updated to ${newStatus}.`,
+          { title: 'Status Updated' }
+        );
+      },
+      error: (err) => {
+        // Revert on failure
+        order.status = previousStatus;
+        const msg = err?.error?.message || err?.message || 'Failed to update order status';
+        this.toastService.error(msg, { title: 'Update Error' });
+      }
+    });
+  }
+
+  hasValidPhone(phone: string): boolean {
+    if (!phone) return false;
+    const clean = phone.replace(/\D/g, '');
+    return clean.length >= 10;
+  }
+
+  getWhatsAppUrl(order: OrderRow): string {
+    if (!this.hasValidPhone(order.phone)) {
+      return '#';
+    }
+
+    let digits = order.phone.replace(/\D/g, '');
+    if (digits.length === 10) {
+      digits = '91' + digits;
+    } else if (digits.length === 11 && digits.startsWith('0')) {
+      digits = '91' + digits.substring(1);
+    }
+
+    let message = '';
+    const custName = order.customerName && order.customerName !== 'Customer' ? order.customerName : 'Valued Customer';
+
+    if (order.status.toLowerCase() === 'shipped') {
+      const trackingId = order.trackingNumber || '[AWB]';
+      const courier = order.courierName || '[Courier Name]';
+      message = `Hello ${custName}, great news! Your order #${order.orderNumber} from South Colours has been dispatched.\nTracking ID: ${trackingId}\nCourier: ${courier}\nThank you for choosing South Colours! 🎨`;
+    } else {
+      message = `Hello ${custName}, thank you for placing an order with South Colours! 🎨\nYour Order #${order.orderNumber} is confirmed and we will shortly send the tracking link and ID once dispatched.`;
+    }
+
+    return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
   }
 }

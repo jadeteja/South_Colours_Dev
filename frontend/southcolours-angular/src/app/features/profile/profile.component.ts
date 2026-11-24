@@ -214,7 +214,6 @@ interface NotificationItem {
                           <span class="label">Total Amount</span>
                           <span class="value">₹ {{ order.total | number }}</span>
                         </div>
-                        <button class="btn-track" (click)="trackOrder(order.id)">Track Order</button>
                       </div>
                     </div>
                   }
@@ -1349,10 +1348,6 @@ export class ProfileComponent implements OnInit {
   markAllNotificationsRead() {
     this.notifications.forEach((n) => (n.isRead = true));
     this.toastService.show({ message: 'All notifications marked as read', type: 'info' });
-  }
-
-  trackOrder(orderId: string) {
-    this.toastService.show({ message: `Tracking info for #${orderId}: In Transit with Express Courier`, type: 'info' });
   }
 
   logout() {

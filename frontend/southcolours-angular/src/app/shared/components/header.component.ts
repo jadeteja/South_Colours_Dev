@@ -4,7 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ShopService } from '../../core/services/shop.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Product } from '../../core/models/ecommerce.models';
+import { Product, Category } from '../../core/models/ecommerce.models';
 
 @Component({
   selector: 'app-header',
@@ -195,14 +195,21 @@ import { Product } from '../../core/models/ecommerce.models';
 
       <!-- Category Navigation Links Matching Reference -->
       <nav class="nav-bar" [class.mobile-open]="isMobileMenuOpen">
-        <div class="container nav-content">
-          <a routerLink="/products" [queryParams]="{ category: 'girls' }" routerLinkActive="active" (click)="closeMobileMenu()">Girls</a>
-          <a routerLink="/products" [queryParams]="{ category: 'boys' }" routerLinkActive="active" (click)="closeMobileMenu()">Boys</a>
-          <a routerLink="/products" [queryParams]="{ category: 'baby-wear' }" routerLinkActive="active" (click)="closeMobileMenu()">Baby Wear</a>
-          <a routerLink="/products" [queryParams]="{ category: 'ethnic-wear' }" routerLinkActive="active" class="highlight" (click)="closeMobileMenu()">Ethnic Wear</a>
-          <a routerLink="/products" [queryParams]="{ filter: 'new-arrivals' }" routerLinkActive="active" (click)="closeMobileMenu()">New Arrivals</a>
-          <a routerLink="/products" [queryParams]="{ filter: 'offers' }" routerLinkActive="active" class="offers" (click)="closeMobileMenu()">Offers</a>
-          <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()">About Us</a>
+        <div class="nav-scroll-wrapper">
+          <div class="container nav-content">
+            @for (cat of categories; track cat.id || cat.slug || cat.name) {
+              <a 
+                [routerLink]="['/products']" 
+                [queryParams]="{ category: cat.slug }" 
+                routerLinkActive="active" 
+                (click)="closeMobileMenu()"
+              >
+                {{ cat.name }}
+              </a>
+            }
+            <a routerLink="/products" [queryParams]="{ filter: 'new-arrivals' }" routerLinkActive="active" (click)="closeMobileMenu()">New Arrivals</a>
+            <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()">About Us</a>
+          </div>
         </div>
       </nav>
       @if (isMobileMenuOpen) {
@@ -576,7 +583,30 @@ import { Product } from '../../core/models/ecommerce.models';
     }
     .nav-bar {
       background: #FFFFFF;
-      padding: 10px 0;
+      padding: 0;
+      width: 100%;
+    }
+    .nav-scroll-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: #FF80AB #FFF5F8;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px 0 6px 0;
+      &::-webkit-scrollbar {
+        height: 5px;
+      }
+      &::-webkit-scrollbar-track {
+        background: #FFF5F8;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #FF80AB;
+        border-radius: 4px;
+      }
+      &::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-pink);
+      }
     }
     .nav-content {
       display: flex;
@@ -584,18 +614,21 @@ import { Product } from '../../core/models/ecommerce.models';
       gap: 32px;
       font-size: 14px;
       font-weight: 700;
+      width: max-content;
+      min-width: 100%;
       a {
         color: var(--dark-navy);
-        padding-bottom: 2px;
+        padding-bottom: 4px;
         position: relative;
         white-space: nowrap;
+        flex-shrink: 0;
         &:hover, &.active {
           color: var(--primary-pink);
         }
         &.active::after {
           content: '';
           position: absolute;
-          bottom: -10px;
+          bottom: -6px;
           left: 0;
           right: 0;
           height: 3px;
@@ -610,6 +643,7 @@ import { Product } from '../../core/models/ecommerce.models';
         background: #F3F4F6;
         padding: 4px 10px;
         border-radius: 6px;
+        flex-shrink: 0;
       }
     }
 
@@ -705,6 +739,7 @@ export class HeaderComponent implements OnInit {
   isSearchFocused = false;
   suggestions: Product[] = [];
   recentSearches: string[] = [];
+  categories: Category[] = [];
 
   private searchDebounceTimer: any;
 
@@ -737,6 +772,24 @@ export class HeaderComponent implements OnInit {
 
   ngOnInit() {
     this.loadRecentSearches();
+    this.loadCategories();
+  }
+
+  loadCategories() {
+    this.shopService.getCategories().subscribe({
+      next: (cats) => {
+        this.categories = (cats || []).filter(c => c.isActive !== false);
+      },
+      error: () => {
+        // Fallback default categories if backend/API is unreachable
+        this.categories = [
+          { id: '1', name: 'Girls', slug: 'girls', displayOrder: 1 },
+          { id: '2', name: 'Boys', slug: 'boys', displayOrder: 2 },
+          { id: '3', name: 'Baby Wear', slug: 'baby-wear', displayOrder: 3 },
+          { id: '4', name: 'Ethnic Wear', slug: 'ethnic-wear', displayOrder: 4 }
+        ];
+      }
+    });
   }
 
   @HostListener('document:click', ['$event'])
