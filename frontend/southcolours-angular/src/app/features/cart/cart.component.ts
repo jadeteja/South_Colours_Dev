@@ -621,14 +621,24 @@ export class CartComponent implements OnInit {
       next: (coupons: any[]) => {
         if (coupons && coupons.length > 0) {
           this.availableCoupons = coupons
-            .filter(c => c.isActive ?? c.IsActive ?? true)
-            .map(c => ({
-              code: c.code || c.Code,
-              description: c.description || c.Description || `${c.discountValue || c.DiscountValue}${c.discountType === 1 ? ' fixed' : '%'} off`,
-              discountType: (c.discountType === 1 || c.DiscountType === 1) ? 'fixed' : 'percentage',
-              discountValue: c.discountValue ?? c.DiscountValue ?? 0,
-              minOrderAmount: c.minimumOrderAmount ?? c.MinimumOrderAmount ?? 0
-            }));
+            .filter(c => (c.isActive ?? c.IsActive ?? true))
+            .map(c => {
+              const code = c.code || c.Code || '';
+              const rawType = c.type ?? c.Type ?? c.discountType ?? c.DiscountType;
+              const isFixed = rawType === 1 || rawType === 'FixedAmount' || rawType === 'fixed';
+              const discountValue = Number(c.value ?? c.Value ?? c.discountValue ?? c.DiscountValue ?? 0);
+              const minAmount = Number(c.minCartAmount ?? c.MinCartAmount ?? c.minimumOrderAmount ?? c.MinimumOrderAmount ?? 0);
+              const desc = (c.description || c.Description || '').trim();
+              const autoDesc = isFixed ? `Flat ₹${discountValue} off` : `${discountValue}% off`;
+
+              return {
+                code,
+                description: desc || autoDesc,
+                discountType: isFixed ? 'fixed' : 'percentage',
+                discountValue,
+                minOrderAmount: minAmount
+              } as CouponItem;
+            });
         } else {
           this.availableCoupons = [];
         }
@@ -662,18 +672,18 @@ export class CartComponent implements OnInit {
     const subtotal = this.shopService.cartSubtotal();
     this.shopService.validateCoupon(code, subtotal).subscribe({
       next: (res: any) => {
-        if (res && res.valid) {
-          const discount = res.discountAmount || 0;
+        const discount = Number(res?.discount ?? res?.Discount ?? res?.discountAmount ?? 0);
+        if (discount > 0 || res?.valid) {
           this.shopService.applyCoupon(code, discount);
           this.couponMessage = `Coupon ${code} applied (₹${discount} savings)`;
           this.couponSuccess = true;
         } else {
-          this.couponMessage = res?.message || 'Invalid coupon code';
+          this.couponMessage = res?.message || res?.Message || 'Invalid coupon code';
           this.couponSuccess = false;
         }
       },
       error: (err: any) => {
-        this.couponMessage = err.error?.message || 'Invalid or expired coupon code';
+        this.couponMessage = err.error?.message || err.error?.Message || 'Invalid or expired coupon code';
         this.couponSuccess = false;
       }
     });
