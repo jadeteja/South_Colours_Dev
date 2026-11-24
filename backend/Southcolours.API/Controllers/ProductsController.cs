@@ -219,11 +219,8 @@ public class ProductsController : ControllerBase
 
         if (dto.ImageUrls != null)
         {
-            var currentImgs = await _db.ProductImages
-                .Where(img => img.ProductId == product.Id)
-                .ToListAsync();
-
-            _db.ProductImages.RemoveRange(currentImgs);
+            // Clear existing tracked images directly from navigation collection
+            product.Images.Clear();
 
             foreach (var (url, idx) in dto.ImageUrls.Select((u, i) => (u, i)))
             {

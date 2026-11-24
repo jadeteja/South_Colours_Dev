@@ -353,10 +353,7 @@ export class AdminAddProductComponent implements OnInit {
   availableSizes = ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'];
   selectedSizes = ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'];
 
-  images: string[] = [
-    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=400&q=80'
-  ];
+  images: string[] = [];
 
   ngOnInit() {
     this.loadCategories();
@@ -530,9 +527,7 @@ export class AdminAddProductComponent implements OnInit {
       sku: this.sku,
       stockQuantity: Number(this.stockQty),
       sizes: this.selectedSizes.length > 0 ? this.selectedSizes : ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'],
-      imageUrls: this.images.length > 0 ? this.images : [
-        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80'
-      ]
+      imageUrls: this.images
     };
 
     this.shopService.createProduct(payload).subscribe({
