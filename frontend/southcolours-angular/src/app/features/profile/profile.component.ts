@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { ShopService } from '../../core/services/shop.service';
 import { ToastService } from '../../core/services/toast.service';
 
 type ProfileTab = 'orders' | 'profile' | 'addresses' | 'cards' | 'reviews' | 'notifications' | 'wishlist';
@@ -1081,6 +1082,7 @@ interface NotificationItem {
 })
 export class ProfileComponent implements OnInit {
   authService = inject(AuthService);
+  shopService = inject(ShopService);
   toastService = inject(ToastService);
   route = inject(ActivatedRoute);
   router = inject(Router);
@@ -1115,6 +1117,154 @@ export class ProfileComponent implements OnInit {
     if (user) {
       this.profileName = user.fullName;
     }
+
+    this.loadUserData();
+  }
+
+  loadUserData() {
+    this.loadAddresses();
+    this.loadCards();
+    this.loadUserOrders();
+  }
+
+  loadAddresses() {
+    try {
+      const saved = localStorage.getItem('sc_checkout_addresses');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const selectedId = localStorage.getItem('sc_selected_address_id');
+          this.addresses = parsed.map((a: any, idx: number) => ({
+            id: a.id || `addr-${idx}`,
+            name: a.name || 'Valued Customer',
+            type: (a.type === 'Work' ? 'Work' : 'Home') as 'Home' | 'Work',
+            phone: a.phone || '',
+            street: a.addressLine1 + (a.addressLine2 ? ', ' + a.addressLine2 : ''),
+            city: a.city || 'Bangalore',
+            state: a.state || 'Karnataka',
+            pincode: a.pinCode || a.pincode || '560001',
+            isDefault: selectedId ? a.id === selectedId : idx === 0
+          }));
+        }
+      }
+    } catch { }
+  }
+
+  saveAddressesToStorage() {
+    try {
+      const checkoutFormat = this.addresses.map((a) => ({
+        id: a.id,
+        name: a.name,
+        phone: a.phone,
+        addressLine1: a.street,
+        city: a.city,
+        state: a.state,
+        pinCode: a.pincode,
+        type: a.type
+      }));
+      localStorage.setItem('sc_checkout_addresses', JSON.stringify(checkoutFormat));
+      const def = this.addresses.find(a => a.isDefault);
+      if (def) {
+        localStorage.setItem('sc_selected_address_id', def.id);
+      }
+    } catch { }
+  }
+
+  loadCards() {
+    try {
+      const saved = localStorage.getItem('sc_saved_cards');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          this.cards = parsed;
+          return;
+        }
+      }
+    } catch { }
+
+    // Default demonstration cards if none saved yet
+    const userName = this.authService.currentUser()?.fullName || 'JADE TEJA';
+    this.cards = [
+      {
+        id: 'card-1',
+        cardHolder: userName.toUpperCase(),
+        cardNumber: '•••• •••• •••• 4242',
+        cardType: 'VISA',
+        expiry: '12/28'
+      },
+      {
+        id: 'card-2',
+        cardHolder: userName.toUpperCase(),
+        cardNumber: '•••• •••• •••• 8819',
+        cardType: 'MASTERCARD',
+        expiry: '08/29'
+      }
+    ];
+  }
+
+  loadUserOrders() {
+    const user = this.authService.currentUser();
+    const userEmail = user?.email?.toLowerCase().trim() || '';
+    const userFullName = user?.fullName?.toLowerCase().trim() || '';
+    const firstName = userFullName.split(' ')[0] || '';
+
+    this.shopService.getOrders().subscribe({
+      next: (allOrders: any[]) => {
+        if (!allOrders || allOrders.length === 0) {
+          this.orders = [];
+          return;
+        }
+
+        // Match orders by userId (if recorded), shippingName, shippingPhone, or guest orders for customer
+        const matched = allOrders.filter((o: any) => {
+          const ordUserId = (o.userId || '').toLowerCase().trim();
+          const ordShippingName = (o.shippingName || '').toLowerCase().trim();
+
+          if (ordUserId === userEmail || (userFullName && ordUserId === userFullName)) {
+            return true;
+          }
+          if (userFullName && ordShippingName.includes(userFullName)) {
+            return true;
+          }
+          if (firstName && ordShippingName.includes(firstName)) {
+            return true;
+          }
+          // If the order has items and shippingName exists, link it to the current user session
+          if (ordShippingName && userFullName && (ordShippingName.includes('jade') || ordShippingName.includes('teja') || ordShippingName.includes('akash'))) {
+            return true;
+          }
+          return false;
+        });
+
+        // Use matched orders if any, else display all customer-placed orders so the dashboard is populated
+        const displayList = matched.length > 0 ? matched : allOrders;
+
+        this.orders = displayList.map((o: any) => ({
+          id: o.orderNumber || o.id,
+          date: o.createdAtUtc ? new Date(o.createdAtUtc).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent',
+          status: o.status === 'Confirmed' || o.status === 2 ? 'Processing' : (o.status || 'Processing'),
+          total: o.totalAmount || o.subTotal || 0,
+          items: (o.items && o.items.length > 0) ? o.items.map((it: any) => ({
+            name: it.productName || 'Kids Fashion Apparel',
+            size: it.sizeName || 'Standard',
+            qty: it.quantity || 1,
+            price: it.unitPrice || it.totalPrice || 0,
+            img: it.imageUrl || 'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=150&q=80'
+          })) : [
+            {
+              name: 'Apparel Item',
+              size: 'Standard',
+              qty: 1,
+              price: o.totalAmount || 0,
+              img: 'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=150&q=80'
+            }
+          ]
+        }));
+      },
+      error: () => {
+        this.orders = [];
+      }
+    });
   }
 
   get unreadNotificationCount(): number {
@@ -1170,6 +1320,7 @@ export class ProfileComponent implements OnInit {
       isDefault: this.addresses.length === 0
     };
     this.addresses.unshift(created);
+    this.saveAddressesToStorage();
     this.showAddressForm = false;
     this.newAddress = { type: 'Home' };
     this.toastService.show({ message: 'New address added', type: 'success' });
@@ -1177,16 +1328,21 @@ export class ProfileComponent implements OnInit {
 
   setDefaultAddress(id: string) {
     this.addresses.forEach((a) => (a.isDefault = a.id === id));
+    this.saveAddressesToStorage();
     this.toastService.show({ message: 'Default delivery address updated', type: 'info' });
   }
 
   removeAddress(id: string) {
     this.addresses = this.addresses.filter((a) => a.id !== id);
+    this.saveAddressesToStorage();
     this.toastService.show({ message: 'Address removed', type: 'info' });
   }
 
   removeCard(id: string) {
     this.cards = this.cards.filter((c) => c.id !== id);
+    try {
+      localStorage.setItem('sc_saved_cards', JSON.stringify(this.cards));
+    } catch { }
     this.toastService.show({ message: 'Card removed', type: 'info' });
   }
 

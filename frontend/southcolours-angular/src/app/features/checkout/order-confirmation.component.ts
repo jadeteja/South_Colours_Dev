@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ShopService } from '../../core/services/shop.service';
 import { InvoiceModalComponent } from '../../shared/components/invoice-modal.component';
+import { ReviewModalComponent, ReviewTargetItem } from '../../shared/components/review-modal.component';
 
 @Component({
   selector: 'app-order-confirmation',
   standalone: true,
-  imports: [CommonModule, RouterModule, InvoiceModalComponent],
+  imports: [CommonModule, RouterModule, InvoiceModalComponent, ReviewModalComponent],
   template: `
     <div class="container confirmation-page">
       <div class="confirmation-card">
@@ -45,6 +46,56 @@ import { InvoiceModalComponent } from '../../shared/components/invoice-modal.com
           </div>
         </div>
 
+        <!-- Purchased Items & Review CTA Banner -->
+        @if (orderDetails?.items && orderDetails.items.length > 0) {
+          <div class="purchased-items-review-box">
+            <div class="section-badge">⭐ Share Your Thoughts</div>
+            <h3 class="box-title">Review Your Purchased Items</h3>
+            <p class="box-subtitle">How did your items fit? Leave a review to help others!</p>
+            <div class="items-list">
+              @for (item of orderDetails.items; track item.id || item.productName) {
+                <div class="purchased-item-row">
+                  <img
+                    [src]="item.imageUrl || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80'"
+                    [alt]="item.productName"
+                    class="item-img"
+                  />
+                  <div class="item-meta">
+                    <span class="item-name">{{ item.productName }}</span>
+                    @if (item.sizeName) {
+                      <span class="item-size">Size: {{ item.sizeName }}</span>
+                    }
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-item-review"
+                    (click)="openReviewModal(item)"
+                    title="Write a review"
+                  >
+                    ⭐ Write Review
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <!-- Fallback Review Prompt for the Order -->
+          <div class="review-prompt-card">
+            <div class="prompt-icon">⭐</div>
+            <div class="prompt-text">
+              <h4>Enjoying your Southcolours shopping?</h4>
+              <p>We'd love to hear your feedback on your latest order experience.</p>
+            </div>
+            <button
+              type="button"
+              class="btn-item-review"
+              (click)="openReviewModalForOrder()"
+            >
+              Review Experience
+            </button>
+          </div>
+        }
+
         <!-- Action Buttons -->
         <div class="actions-group">
           <button class="btn-invoice" (click)="openInvoice()">
@@ -65,6 +116,10 @@ import { InvoiceModalComponent } from '../../shared/components/invoice-modal.com
 
     @if (showInvoiceModal) {
       <app-invoice-modal [order]="orderDetails" (close)="showInvoiceModal = false"></app-invoice-modal>
+    }
+
+    @if (selectedReviewItem) {
+      <app-review-modal [item]="selectedReviewItem" (close)="selectedReviewItem = null"></app-review-modal>
     }
   `,
   styles: [`
@@ -132,7 +187,7 @@ import { InvoiceModalComponent } from '../../shared/components/invoice-modal.com
       border: 1px solid var(--border-pink);
       border-radius: 14px;
       padding: 16px 24px;
-      margin-bottom: 30px;
+      margin-bottom: 24px;
       .detail-row {
         display: flex;
         justify-content: space-between;
@@ -157,6 +212,143 @@ import { InvoiceModalComponent } from '../../shared/components/invoice-modal.com
             font-size: 16px;
             color: var(--dark-navy);
           }
+        }
+      }
+    }
+    .purchased-items-review-box {
+      background: linear-gradient(135deg, #FFF9FB 0%, #FFFFFF 100%);
+      border: 1.5px solid var(--border-pink, #FFD6E7);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: left;
+
+      .section-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--primary-pink, #FF4081);
+        background: #FFF0F5;
+        padding: 2px 8px;
+        border-radius: 6px;
+        margin-bottom: 6px;
+      }
+      .box-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--dark-navy);
+        margin: 0 0 4px;
+      }
+      .box-subtitle {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin: 0 0 16px;
+      }
+      .items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .purchased-item-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: #FFFFFF;
+        border: 1px solid #F1F5F9;
+        border-radius: 10px;
+
+        .item-img {
+          width: 44px;
+          height: 52px;
+          object-fit: cover;
+          border-radius: 6px;
+          border: 1px solid #E2E8F0;
+        }
+        .item-meta {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          .item-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--dark-navy);
+          }
+          .item-size {
+            font-size: 12px;
+            color: #64748B;
+          }
+        }
+        .btn-item-review {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          background: #FFF0F5;
+          color: var(--primary-pink, #FF4081);
+          border: 1.5px solid #FFD6E7;
+          padding: 6px 14px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+
+          &:hover {
+            background: var(--primary-pink, #FF4081);
+            color: #FFFFFF;
+            border-color: var(--primary-pink, #FF4081);
+            box-shadow: 0 2px 8px rgba(255, 64, 129, 0.3);
+          }
+        }
+      }
+    }
+    .review-prompt-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #FFF9FB;
+      border: 1px dashed var(--border-pink, #FFD6E7);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      text-align: left;
+
+      .prompt-icon {
+        font-size: 26px;
+      }
+      .prompt-text {
+        flex: 1;
+        h4 {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--dark-navy);
+          margin: 0 0 2px;
+        }
+        p {
+          font-size: 12px;
+          color: var(--text-muted);
+          margin: 0;
+        }
+      }
+      .btn-item-review {
+        background: #FFF0F5;
+        color: var(--primary-pink, #FF4081);
+        border: 1.5px solid #FFD6E7;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+
+        &:hover {
+          background: var(--primary-pink, #FF4081);
+          color: #FFFFFF;
+          border-color: var(--primary-pink, #FF4081);
         }
       }
     }
@@ -234,6 +426,7 @@ export class OrderConfirmationComponent implements OnInit {
   totalAmount = 5697;
   orderDetails: any = null;
   showInvoiceModal = false;
+  selectedReviewItem: ReviewTargetItem | null = null;
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
@@ -281,6 +474,25 @@ export class OrderConfirmationComponent implements OnInit {
       };
     }
     this.showInvoiceModal = true;
+  }
+
+  openReviewModal(item: any) {
+    this.selectedReviewItem = {
+      productId: item.productId || 'p-dummy',
+      productName: item.productName || 'Southcolours Fashion Apparel',
+      sizeName: item.sizeName,
+      colorName: item.colorName,
+      imageUrl: item.imageUrl,
+      orderNumber: this.orderNumber
+    };
+  }
+
+  openReviewModalForOrder() {
+    this.selectedReviewItem = {
+      productId: 'p-order-' + this.orderNumber,
+      productName: `Order #${this.orderNumber} Products`,
+      orderNumber: this.orderNumber
+    };
   }
 }
 

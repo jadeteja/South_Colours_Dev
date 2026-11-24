@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ShopService } from '../../core/services/shop.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
 
 export interface DeliveryAddress {
   id: string;
@@ -827,6 +828,7 @@ export interface DeliveryAddress {
 export class CheckoutComponent implements OnInit {
   shopService = inject(ShopService);
   toastService = inject(ToastService);
+  authService = inject(AuthService);
   router = inject(Router);
 
   selectedPayment = 'card';
@@ -1035,8 +1037,11 @@ export class CheckoutComponent implements OnInit {
 
     const isCod = this.selectedPayment === 'cod';
 
+    const currentUser = this.authService.currentUser();
+    const resolvedUserId = currentUser?.email || currentUser?.fullName || 'guest-customer';
+
     const orderPayload = {
-      userId: 'guest-customer',
+      userId: resolvedUserId,
       paymentMethod: isCod ? 'COD' : 'Razorpay',
       subTotal: this.shopService.cartSubtotal(),
       discountAmount: this.shopService.cartDiscount(),
@@ -1146,7 +1151,7 @@ export class CheckoutComponent implements OnInit {
                 prefill: {
                   name: currentAddr.name,
                   contact: currentAddr.phone,
-                  email: 'customer@southcolours.com'
+                  email: this.authService.currentUser()?.email || 'customer@southcolours.com'
                 },
                 theme: {
                   color: '#FF4081'

@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ShopService } from '../../core/services/shop.service';
 import { InvoiceModalComponent } from '../../shared/components/invoice-modal.component';
+import { ReviewModalComponent, ReviewTargetItem } from '../../shared/components/review-modal.component';
 
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [CommonModule, RouterModule, InvoiceModalComponent],
+  imports: [CommonModule, RouterModule, InvoiceModalComponent, ReviewModalComponent],
   template: `
     <div class="container account-page">
       <div class="account-layout">
@@ -84,14 +85,26 @@ import { InvoiceModalComponent } from '../../shared/components/invoice-modal.com
                         <h4 class="item-title">{{ item.productName }} (Size: {{ item.sizeName || 'Standard' }})</h4>
                         <div class="item-subinfo">Qty: {{ item.quantity }} × ₹ {{ item.unitPrice | number }}</div>
                       </div>
-                      <span class="item-amt">₹ {{ (item.unitPrice * item.quantity) | number }}</span>
+                      <div class="item-right-actions">
+                        <span class="item-amt">₹ {{ (item.unitPrice * item.quantity) | number }}</span>
+                        <button
+                          type="button"
+                          class="btn-write-review"
+                          (click)="openReviewModal(item, order)"
+                          title="Write a review for this purchased product"
+                        >
+                          <span class="star-icon">⭐</span> Review
+                        </button>
+                      </div>
                     </div>
                   } @empty {
                     <div class="order-item-row">
                       <div class="item-info">
                         <h4 class="item-title">Fashion Apparel Order</h4>
                       </div>
-                      <span class="item-amt">₹ {{ order.totalAmount | number }}</span>
+                      <div class="item-right-actions">
+                        <span class="item-amt">₹ {{ order.totalAmount | number }}</span>
+                      </div>
                     </div>
                   }
                 </div>
@@ -130,6 +143,13 @@ import { InvoiceModalComponent } from '../../shared/components/invoice-modal.com
 
     @if (selectedInvoiceOrder) {
       <app-invoice-modal [order]="selectedInvoiceOrder" (close)="selectedInvoiceOrder = null"></app-invoice-modal>
+    }
+
+    @if (selectedReviewItem) {
+      <app-review-modal
+        [item]="selectedReviewItem"
+        (close)="selectedReviewItem = null"
+      ></app-review-modal>
     }
   `,
   styles: [`
@@ -285,6 +305,38 @@ import { InvoiceModalComponent } from '../../shared/components/invoice-modal.com
         font-weight: 700;
         color: var(--dark-navy);
       }
+      .item-right-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+      }
+      .btn-write-review {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #FFF0F5;
+        color: var(--primary-pink, #FF4081);
+        border: 1px solid #FFD6E7;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+
+        .star-icon {
+          font-size: 11px;
+        }
+
+        &:hover {
+          background: var(--primary-pink, #FF4081);
+          color: #FFFFFF;
+          border-color: var(--primary-pink, #FF4081);
+          box-shadow: 0 2px 8px rgba(255, 64, 129, 0.25);
+        }
+      }
     }
     .order-footer {
       display: flex;
@@ -416,6 +468,7 @@ export class OrdersComponent implements OnInit {
   selectedTab = 'All';
   orders: any[] = [];
   selectedInvoiceOrder: any = null;
+  selectedReviewItem: ReviewTargetItem | null = null;
 
   ngOnInit() {
     this.shopService.getOrders().subscribe({
@@ -461,6 +514,18 @@ export class OrdersComponent implements OnInit {
 
   viewInvoice(order: any) {
     this.selectedInvoiceOrder = order;
+  }
+
+  openReviewModal(item: any, order: any) {
+    this.selectedReviewItem = {
+      productId: item.productId || 'p-dummy',
+      productName: item.productName || 'Southcolours Fashion Apparel',
+      sizeName: item.sizeName,
+      colorName: item.colorName,
+      imageUrl: item.imageUrl,
+      orderNumber: order.orderNumber,
+      orderId: order.id
+    };
   }
 }
 
