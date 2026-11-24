@@ -34,10 +34,10 @@ import { CommonModule } from '@angular/common';
               <h1 class="inv-logo">Southcolours</h1>
               <p class="inv-tagline">Little Styles, Big Smiles</p>
               <p class="inv-company-info">
-                Southcolours Kids Wear Pvt. Ltd.<br />
-                Bangalore, Karnataka - 560001, India<br />
-                Email: support&#64;southcolours.com | Phone: +91 98765 43210<br />
-                <strong>GSTIN:</strong> 29AAAAA0000A1Z5
+                Southcolours Kids Wear<br />
+                Bangalore, Karnataka, India<br />
+                Email: prasuna.goje&#64;gmail.com | Phone: +91 93982 93994<br />
+                <strong>GSTIN:</strong> 29BHAPD0509F2ZW
               </p>
             </div>
             <div class="inv-meta">
@@ -136,7 +136,7 @@ import { CommonModule } from '@angular/common';
               <ol>
                 <li>Goods once sold can be exchanged within 7 days of delivery.</li>
                 <li>This is a computer-generated tax invoice and requires no physical signature.</li>
-                <li>For any queries, contact support&#64;southcolours.com.</li>
+                <li>For any queries, contact prasuna.goje&#64;gmail.com or +91 93982 93994.</li>
               </ol>
             </div>
 
@@ -175,7 +175,7 @@ import { CommonModule } from '@angular/common';
           <!-- Footer Signature -->
           <div class="inv-footer">
             <div class="authorized-sign">
-              <p class="sign-text">For <strong>Southcolours Kids Wear Pvt. Ltd.</strong></p>
+              <p class="sign-text">For <strong>Southcolours Kids Wear</strong></p>
               <div class="sign-seal">Authorized Signatory</div>
             </div>
           </div>
