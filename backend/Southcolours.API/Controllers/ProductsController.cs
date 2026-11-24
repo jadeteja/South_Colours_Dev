@@ -205,7 +205,6 @@ public class ProductsController : ControllerBase
     {
         var product = await _db.Products
             .Include(p => p.Images)
-            .Include(p => p.Variants)
             .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
         if (product == null) return NotFound(new { Message = "Product not found." });
@@ -219,41 +218,39 @@ public class ProductsController : ControllerBase
 
         if (dto.ImageUrls != null)
         {
-            // Clear existing tracked images directly from navigation collection
-            product.Images.Clear();
+            var existingImages = product.Images.ToList();
+            var newUrls = dto.ImageUrls;
 
-            foreach (var (url, idx) in dto.ImageUrls.Select((u, i) => (u, i)))
+            // Update existing or add new ones to avoid EF Core navigation tracking conflicts
+            for (int i = 0; i < newUrls.Count; i++)
             {
-                product.Images.Add(new ProductImage
+                if (i < existingImages.Count)
                 {
-                    ProductId = product.Id,
-                    ImageUrl = url,
-                    IsPrimary = idx == 0,
-                    DisplayOrder = idx + 1
-                });
+                    existingImages[i].ImageUrl = newUrls[i];
+                    existingImages[i].IsPrimary = i == 0;
+                    existingImages[i].DisplayOrder = i + 1;
+                    existingImages[i].UpdatedAtUtc = DateTime.UtcNow;
+                }
+                else
+                {
+                    product.Images.Add(new ProductImage
+                    {
+                        ProductId = product.Id,
+                        ImageUrl = newUrls[i],
+                        IsPrimary = i == 0,
+                        DisplayOrder = i + 1
+                    });
+                }
             }
-        }
 
-        try
-        {
-            await _db.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            // If the row was modified by an alternate process, reload and apply changes
-            foreach (var entry in _db.ChangeTracker.Entries())
+            // Remove any excess images if user deleted some
+            for (int i = newUrls.Count; i < existingImages.Count; i++)
             {
-                await entry.ReloadAsync();
+                _db.ProductImages.Remove(existingImages[i]);
             }
-            product.Name = dto.Name;
-            product.ShortDescription = dto.Description;
-            product.DetailedDescription = dto.Description;
-            product.SellingPrice = dto.DiscountPrice > 0 ? dto.DiscountPrice : dto.Price;
-            product.OriginalPrice = dto.Price;
-            product.UpdatedAtUtc = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
         }
 
+        await _db.SaveChangesAsync();
         return Ok(product);
     }
 
