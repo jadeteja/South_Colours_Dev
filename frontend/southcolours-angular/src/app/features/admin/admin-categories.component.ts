@@ -282,7 +282,7 @@ export class AdminCategoriesComponent implements OnInit {
   activeCat = {
     name: '',
     slug: '',
-    imageUrl: 'https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=600&q=80',
+    imageUrl: '',
     targetGender: 2,
     displayOrder: 1,
     isActive: true
@@ -305,7 +305,7 @@ export class AdminCategoriesComponent implements OnInit {
     this.activeCat = {
       name: '',
       slug: '',
-      imageUrl: 'https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=600&q=80',
+      imageUrl: '',
       targetGender: 2,
       displayOrder: (this.categories.length || 0) + 1,
       isActive: true
