@@ -60,9 +60,7 @@ export interface DeliveryAddress {
                       </div>
                       <div class="addr-actions">
                         <button type="button" class="edit-link" (click)="openEditAddressModal(addr, $event)">Edit</button>
-                        @if (addresses.length > 1) {
-                          <button type="button" class="delete-link" (click)="deleteAddress(addr.id, $event)">Delete</button>
-                        }
+                        <button type="button" class="delete-link" (click)="deleteAddress(addr.id, $event)">Delete</button>
                       </div>
                     </div>
                     <p class="addr-text">
@@ -72,6 +70,17 @@ export interface DeliveryAddress {
                     <p class="phone-text">📞 {{ addr.phone }}</p>
                   </div>
                 </label>
+              } @empty {
+                <div class="no-address-box">
+                  <span class="no-addr-icon">📍</span>
+                  <div class="no-addr-info">
+                    <h4>No delivery address added yet</h4>
+                    <p>Please add your shipping address to proceed with the order.</p>
+                  </div>
+                  <button type="button" class="btn-primary add-first-btn" (click)="openAddAddressModal()">
+                    + Add Delivery Address
+                  </button>
+                </div>
               }
             </div>
           </div>
@@ -354,6 +363,37 @@ export interface DeliveryAddress {
       display: flex;
       flex-direction: column;
       gap: 14px;
+    }
+    .no-address-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 32px 20px;
+      border: 2px dashed var(--border-pink);
+      border-radius: var(--radius-md);
+      background: #FFF9FB;
+      gap: 12px;
+      .no-addr-icon {
+        font-size: 32px;
+      }
+      .no-addr-info {
+        h4 {
+          font-size: 16px;
+          color: var(--dark-navy);
+          font-weight: 700;
+          margin-bottom: 4px;
+        }
+        p {
+          font-size: 13px;
+          color: var(--text-muted);
+        }
+      }
+      .add-first-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+        margin-top: 6px;
+      }
     }
     .address-option {
       display: flex;
@@ -792,32 +832,8 @@ export class CheckoutComponent implements OnInit {
   selectedPayment = 'card';
   isProcessing = false;
 
-  addresses: DeliveryAddress[] = [
-    {
-      id: 'addr-1',
-      name: 'Priya Sharma',
-      phone: '9876543210',
-      addressLine1: '123, Green Park',
-      addressLine2: 'Indiranagar',
-      city: 'Bangalore',
-      state: 'Karnataka',
-      pinCode: '560001',
-      type: 'Home'
-    },
-    {
-      id: 'addr-2',
-      name: 'Office',
-      phone: '9123456780',
-      addressLine1: 'ABC Tech Park, Whitefield',
-      addressLine2: '',
-      city: 'Bangalore',
-      state: 'Karnataka',
-      pinCode: '560066',
-      type: 'Office'
-    }
-  ];
-
-  selectedAddressId = 'addr-1';
+  addresses: DeliveryAddress[] = [];
+  selectedAddressId = '';
 
   // Modal State
   showAddressModal = false;
@@ -987,16 +1003,8 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
-  getSelectedAddress(): DeliveryAddress {
-    return this.addresses.find(a => a.id === this.selectedAddressId) || this.addresses[0] || {
-      id: 'default',
-      name: 'Customer',
-      phone: '9876543210',
-      addressLine1: 'Main Street',
-      city: 'Bangalore',
-      state: 'Karnataka',
-      pinCode: '560001'
-    };
+  getSelectedAddress(): DeliveryAddress | null {
+    return this.addresses.find(a => a.id === this.selectedAddressId) || (this.addresses.length > 0 ? this.addresses[0] : null);
   }
 
   placeOrder() {
@@ -1006,6 +1014,11 @@ export class CheckoutComponent implements OnInit {
     }
 
     const currentAddr = this.getSelectedAddress();
+    if (!currentAddr) {
+      this.toastService.error('Please add a delivery address before placing order.');
+      this.openAddAddressModal();
+      return;
+    }
     this.isProcessing = true;
 
     const isCod = this.selectedPayment === 'cod';
@@ -1018,7 +1031,7 @@ export class CheckoutComponent implements OnInit {
       shippingFee: this.shopService.shippingFee(),
       taxAmount: Math.round(this.shopService.cartSubtotal() * 0.05),
       totalAmount: this.shopService.cartTotal(),
-      couponCode: 'WELCOME300',
+      couponCode: this.shopService.appliedCouponCode() || null,
       shippingName: currentAddr.name,
       shippingPhone: currentAddr.phone,
       shippingAddressLine1: currentAddr.addressLine1,
@@ -1044,6 +1057,7 @@ export class CheckoutComponent implements OnInit {
         if (isCod) {
           this.isProcessing = false;
           this.shopService.clearCart();
+          this.shopService.removeCoupon();
           this.router.navigate(['/order-confirmation'], {
             queryParams: {
               orderId: order.orderNumber,

@@ -64,6 +64,18 @@ public class OrdersController : ControllerBase
         return order == null ? NotFound() : Ok(order);
     }
 
+    [HttpGet("number/{orderNumber}")]
+    public async Task<IActionResult> GetOrderByNumber(string orderNumber)
+    {
+        var order = await _db.Orders
+            .Include(o => o.Items)
+            .Include(o => o.Payments)
+            .Include(o => o.StatusHistories)
+            .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
+
+        return order == null ? NotFound() : Ok(order);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto request)
     {

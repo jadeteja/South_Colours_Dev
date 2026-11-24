@@ -23,4 +23,12 @@
     <ProjectReference Include="..\Southcolours.Persistence\Southcolours.Persistence.csproj" />
   </ItemGroup>
 
+  <!-- Auto sync Angular build to wwwroot on build if dist exists -->
+  <Target Name="SyncAngularDistToWwwroot" BeforeTargets="Build">
+    <ItemGroup>
+      <DistFiles Include="..\..\frontend\southcolours-angular\dist\southcolours-angular\browser\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DistFiles)" DestinationFolder="wwwroot\%(RecursiveDir)" SkipUnchangedFiles="true" Condition="Exists('..\..\frontend\southcolours-angular\dist\southcolours-angular\browser\index.html')" />
+  </Target>
+
 </Project>

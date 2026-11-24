@@ -1,8 +1,16 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ShopService } from '../../core/services/shop.service';
+
+interface CouponItem {
+  code: string;
+  description: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderAmount?: number;
+}
 
 @Component({
   selector: 'app-cart',
@@ -51,13 +59,72 @@ import { ShopService } from '../../core/services/shop.service';
         <div class="cart-summary-column">
           <!-- Coupon Box -->
           <div class="summary-card coupon-box">
-            <h3 class="box-title">Apply Coupon</h3>
-            <div class="coupon-input-group">
-              <input type="text" placeholder="Enter coupon code" [(ngModel)]="couponCode" />
-              <button class="apply-btn" (click)="applyCoupon()">Apply</button>
+            <div class="coupon-header">
+              <h3 class="box-title">Apply Coupon</h3>
+              @if (shopService.appliedCouponCode()) {
+                <button class="remove-coupon-btn" (click)="removeCoupon()">Remove</button>
+              }
             </div>
+
+            <div class="coupon-input-group">
+              <input
+                type="text"
+                placeholder="Enter coupon code"
+                [(ngModel)]="couponCode"
+                (keyup.enter)="applyCoupon()"
+                [disabled]="!!shopService.appliedCouponCode()"
+              />
+              @if (shopService.appliedCouponCode()) {
+                <button class="applied-badge-btn" disabled>Applied ✓</button>
+              } @else {
+                <button class="apply-btn" (click)="applyCoupon()" [disabled]="!couponCode.trim()">Apply</button>
+              }
+            </div>
+
             @if (couponMessage) {
               <p class="coupon-msg" [class.success]="couponSuccess">{{ couponMessage }}</p>
+            }
+
+            <!-- Available Coupons List (from Admin Panel) -->
+            @if (availableCoupons.length > 0) {
+              <div class="available-coupons-wrap">
+                <h4 class="available-title">
+                  <span class="tag-icon">🏷️</span> Available Coupons
+                </h4>
+                <div class="coupons-grid">
+                  @for (c of availableCoupons; track c.code) {
+                    <div
+                      class="coupon-card"
+                      [class.is-applied]="shopService.appliedCouponCode() === c.code"
+                      [class.is-disabled]="c.minOrderAmount && shopService.cartSubtotal() < c.minOrderAmount"
+                    >
+                      <div class="coupon-card-main">
+                        <div class="coupon-pill-row">
+                          <span class="coupon-badge">{{ c.code }}</span>
+                          @if (c.minOrderAmount && shopService.cartSubtotal() < c.minOrderAmount) {
+                            <span class="coupon-req">Min ₹{{ c.minOrderAmount }}</span>
+                          }
+                        </div>
+                        <p class="coupon-desc">{{ c.description }}</p>
+                      </div>
+
+                      <div class="coupon-card-action">
+                        @if (shopService.appliedCouponCode() === c.code) {
+                          <button class="action-btn applied-action" (click)="removeCoupon()">Remove</button>
+                        } @else {
+                          <button
+                            class="action-btn apply-action"
+                            [disabled]="(c.minOrderAmount && shopService.cartSubtotal() < c.minOrderAmount) || shopService.cartSubtotal() === 0"
+                            (click)="selectAndApplyCoupon(c)"
+                          >
+                            Apply
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
             }
           </div>
 
@@ -234,6 +301,27 @@ import { ShopService } from '../../core/services/shop.service';
       padding: 22px;
       margin-bottom: 20px;
     }
+    .coupon-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      .box-title {
+        margin-bottom: 0;
+      }
+      .remove-coupon-btn {
+        background: transparent;
+        color: #E53935;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+        &:hover {
+          background: #FFEBEE;
+        }
+      }
+    }
     .box-title {
       font-size: 16px;
       font-weight: 800;
@@ -251,11 +339,35 @@ import { ShopService } from '../../core/services/shop.service';
         font-size: 13px;
         outline: none;
         background: #FFF5F8;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        &:disabled {
+          background: #F5F5F5;
+          color: #888;
+        }
       }
       .apply-btn {
         background-color: var(--primary-pink);
         color: white;
         padding: 0 18px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        &:hover:not(:disabled) {
+          filter: brightness(0.95);
+        }
+      }
+      .applied-badge-btn {
+        background-color: #E8F5E9;
+        color: #2E7D32;
+        border: 1px solid #A5D6A7;
+        padding: 0 14px;
         border-radius: 8px;
         font-weight: 700;
         font-size: 13px;
@@ -265,8 +377,108 @@ import { ShopService } from '../../core/services/shop.service';
       font-size: 12px;
       margin-top: 8px;
       color: #D32F2F;
+      font-weight: 600;
       &.success {
-        color: var(--success-green);
+        color: #2E7D32;
+      }
+    }
+    .available-coupons-wrap {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border-pink);
+      .available-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .coupons-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .coupon-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border: 1px dashed #FFB6C1;
+        background: #FFF9FA;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        &.is-applied {
+          border: 1.5px solid #4CAF50;
+          background: #F1F8E9;
+        }
+        &.is-disabled {
+          opacity: 0.65;
+          background: #FAFAFA;
+          border-color: #E0E0E0;
+        }
+        .coupon-card-main {
+          flex: 1;
+          .coupon-pill-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 3px;
+          }
+          .coupon-badge {
+            background: #FFE4EC;
+            color: var(--primary-pink);
+            font-weight: 800;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+          }
+          .coupon-req {
+            font-size: 11px;
+            color: #E53935;
+            font-weight: 600;
+          }
+          .coupon-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+            line-height: 1.3;
+          }
+        }
+        .action-btn {
+          font-size: 12px;
+          font-weight: 700;
+          padding: 6px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          &.apply-action {
+            background: #FFFFFF;
+            color: var(--primary-pink);
+            border: 1px solid var(--primary-pink);
+            &:hover:not(:disabled) {
+              background: var(--primary-pink);
+              color: white;
+            }
+            &:disabled {
+              border-color: #CCC;
+              color: #999;
+              cursor: not-allowed;
+            }
+          }
+          &.applied-action {
+            background: #FFEBEE;
+            color: #C62828;
+            border: 1px solid #EF9A9A;
+            &:hover {
+              background: #FFCDD2;
+            }
+          }
+        }
       }
     }
     .price-line {
@@ -387,27 +599,118 @@ import { ShopService } from '../../core/services/shop.service';
     }
   `]
 })
-export class CartComponent {
+export class CartComponent implements OnInit {
   shopService = inject(ShopService);
 
-  couponCode = 'WELCOME300';
-  couponMessage = 'Coupon WELCOME300 applied (₹300 savings)';
-  couponSuccess = true;
+  couponCode = '';
+  couponMessage = '';
+  couponSuccess = false;
+
+  availableCoupons: CouponItem[] = [];
+
+  ngOnInit() {
+    // If a coupon was already applied in shopService, reflect its code
+    if (this.shopService.appliedCouponCode()) {
+      this.couponCode = this.shopService.appliedCouponCode();
+      this.couponMessage = `Coupon ${this.couponCode} applied (₹${this.shopService.cartDiscount()} savings)`;
+      this.couponSuccess = true;
+    }
+
+    // Load active coupons exclusively from admin panel backend API
+    this.shopService.getCoupons().subscribe({
+      next: (coupons: any[]) => {
+        if (coupons && coupons.length > 0) {
+          this.availableCoupons = coupons
+            .filter(c => c.isActive ?? c.IsActive ?? true)
+            .map(c => ({
+              code: c.code || c.Code,
+              description: c.description || c.Description || `${c.discountValue || c.DiscountValue}${c.discountType === 1 ? ' fixed' : '%'} off`,
+              discountType: (c.discountType === 1 || c.DiscountType === 1) ? 'fixed' : 'percentage',
+              discountValue: c.discountValue ?? c.DiscountValue ?? 0,
+              minOrderAmount: c.minimumOrderAmount ?? c.MinimumOrderAmount ?? 0
+            }));
+        } else {
+          this.availableCoupons = [];
+        }
+      },
+      error: () => {
+        this.availableCoupons = [];
+      }
+    });
+  }
+
+  selectAndApplyCoupon(coupon: CouponItem) {
+    this.couponCode = coupon.code;
+    this.executeApplyCoupon(coupon);
+  }
 
   applyCoupon() {
-    if (this.couponCode.toUpperCase() === 'WELCOME300') {
-      this.shopService.cartDiscount.set(300);
-      this.couponMessage = 'Coupon WELCOME300 applied (₹300 savings)';
-      this.couponSuccess = true;
-    } else if (this.couponCode.toUpperCase() === 'FESTIVE15') {
-      const discount = Math.round(this.shopService.cartSubtotal() * 0.15);
-      this.shopService.cartDiscount.set(discount);
-      this.couponMessage = `Coupon FESTIVE15 applied (₹${discount} savings)`;
-      this.couponSuccess = true;
-    } else {
-      this.couponMessage = 'Invalid coupon code';
+    const code = this.couponCode.trim().toUpperCase();
+    if (!code) {
+      this.couponMessage = 'Please enter a coupon code';
       this.couponSuccess = false;
+      return;
     }
+
+    const matched = this.availableCoupons.find(c => c.code.toUpperCase() === code);
+    if (matched) {
+      this.executeApplyCoupon(matched);
+      return;
+    }
+
+    // Attempt backend validation if not in local list
+    const subtotal = this.shopService.cartSubtotal();
+    this.shopService.validateCoupon(code, subtotal).subscribe({
+      next: (res: any) => {
+        if (res && res.valid) {
+          const discount = res.discountAmount || 0;
+          this.shopService.applyCoupon(code, discount);
+          this.couponMessage = `Coupon ${code} applied (₹${discount} savings)`;
+          this.couponSuccess = true;
+        } else {
+          this.couponMessage = res?.message || 'Invalid coupon code';
+          this.couponSuccess = false;
+        }
+      },
+      error: (err: any) => {
+        this.couponMessage = err.error?.message || 'Invalid or expired coupon code';
+        this.couponSuccess = false;
+      }
+    });
+  }
+
+  private executeApplyCoupon(coupon: CouponItem) {
+    const subtotal = this.shopService.cartSubtotal();
+    if (subtotal === 0) {
+      this.couponMessage = 'Your cart is empty';
+      this.couponSuccess = false;
+      return;
+    }
+
+    if (coupon.minOrderAmount && subtotal < coupon.minOrderAmount) {
+      this.couponMessage = `Minimum order of ₹${coupon.minOrderAmount} required for coupon ${coupon.code}`;
+      this.couponSuccess = false;
+      return;
+    }
+
+    let discount = 0;
+    if (coupon.discountType === 'percentage') {
+      discount = Math.round((subtotal * coupon.discountValue) / 100);
+    } else {
+      discount = Math.min(coupon.discountValue, subtotal);
+    }
+
+    this.couponCode = coupon.code;
+    this.shopService.applyCoupon(coupon.code, discount);
+    this.couponMessage = `Coupon ${coupon.code} applied (₹${discount} savings)`;
+    this.couponSuccess = true;
+  }
+
+  removeCoupon() {
+    this.shopService.removeCoupon();
+    this.couponCode = '';
+    this.couponMessage = 'Coupon removed';
+    this.couponSuccess = false;
   }
 }
 

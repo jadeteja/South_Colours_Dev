@@ -87,7 +87,7 @@ import { ShopService } from '../../core/services/shop.service';
                   </div>
                   <div class="item-right">
                     <span class="amt">₹ {{ order.totalAmount | number }}</span>
-                    <span class="badge" [ngClass]="order.status.toLowerCase()">{{ order.status }}</span>
+                    <span class="badge" [ngClass]="order.status.toLowerCase().replace(' ', '-')">{{ order.status }}</span>
                   </div>
                 </div>
               } @empty {
@@ -250,8 +250,14 @@ import { ShopService } from '../../core/services/shop.service';
           padding: 2px 8px;
           border-radius: 9999px;
           font-weight: 700;
+          background: #F1F5F9;
+          color: #475569;
+          &.confirmed { background: #DCFCE7; color: #166534; }
           &.delivered { background: #DCFCE7; color: #166534; }
           &.shipped { background: #DBEAFE; color: #1E40AF; }
+          &.pending { background: #FEF3C7; color: #92400E; }
+          &.pending-payment { background: #FEF3C7; color: #92400E; }
+          &.failed { background: #FEE2E2; color: #991B1B; }
         }
       }
     }
@@ -296,6 +302,14 @@ export class AdminDashboardComponent implements OnInit {
     this.loadData();
   }
 
+  private normalizeStatus(status: any): string {
+    if (typeof status === 'number') {
+      const map = ['Pending Payment', 'Payment Failed', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered', 'Cancellation Requested', 'Cancelled', 'Return Requested', 'Return Approved', 'Returned', 'Refund Pending', 'Refunded'];
+      return map[status] || 'Pending';
+    }
+    return status || 'Pending';
+  }
+
   loadData() {
     this.shopService.getProducts().subscribe({
       next: (res) => {
@@ -307,23 +321,39 @@ export class AdminDashboardComponent implements OnInit {
     this.shopService.getOrders().subscribe({
       next: (orders: any[]) => {
         if (orders && orders.length > 0) {
-          this.stats.totalOrders = orders.length;
-          this.stats.pendingOrders = orders.filter(o => o.status === 'Pending' || o.status === 'Processing' || o.status === 'Confirmed').length;
-          this.stats.monthlyRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+          // Normalize status
+          const parsedOrders = orders.map(o => ({
+            ...o,
+            normalizedStatus: this.normalizeStatus(o.status),
+            isPaidOrConfirmed: (typeof o.status === 'number' ? o.status >= 2 && o.status <= 7 : (o.status !== 'PendingPayment' && o.status !== 'Pending Payment' && o.status !== 'PaymentFailed' && o.status !== 'Cancelled'))
+          }));
+
+          // Total verified/paid/COD orders only
+          const paidOrders = parsedOrders.filter(o => o.isPaidOrConfirmed);
+
+          this.stats.totalOrders = paidOrders.length;
+          this.stats.pendingOrders = paidOrders.filter(o => o.normalizedStatus === 'Confirmed' || o.normalizedStatus === 'Processing' || o.normalizedStatus === 'Packed').length;
+          this.stats.monthlyRevenue = paidOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
           
           const today = new Date().toDateString();
-          this.stats.todaySales = orders
+          this.stats.todaySales = paidOrders
             .filter(o => new Date(o.createdAtUtc || o.createdAt).toDateString() === today)
             .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-          this.recentOrders = orders.slice(0, 5).map(o => ({
+          this.recentOrders = parsedOrders.slice(0, 5).map(o => ({
             id: o.id,
             orderNumber: o.orderNumber,
             customerName: o.shippingName || o.shippingAddress?.fullName || 'Customer',
             city: o.shippingCity || o.shippingAddress?.city || 'India',
             totalAmount: o.totalAmount,
-            status: o.status || 'Confirmed'
+            status: o.normalizedStatus
           }));
+        } else {
+          this.stats.totalOrders = 0;
+          this.stats.pendingOrders = 0;
+          this.stats.monthlyRevenue = 0;
+          this.stats.todaySales = 0;
+          this.recentOrders = [];
         }
       },
       error: () => {}

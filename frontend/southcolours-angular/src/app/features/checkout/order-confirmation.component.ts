@@ -1,11 +1,13 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
+import { ShopService } from '../../core/services/shop.service';
+import { InvoiceModalComponent } from '../../shared/components/invoice-modal.component';
 
 @Component({
   selector: 'app-order-confirmation',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, InvoiceModalComponent],
   template: `
     <div class="container confirmation-page">
       <div class="confirmation-card">
@@ -45,11 +47,25 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 
         <!-- Action Buttons -->
         <div class="actions-group">
+          <button class="btn-invoice" (click)="openInvoice()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Download / View Tax Invoice
+          </button>
           <a routerLink="/" class="btn-primary continue-btn">Continue Shopping</a>
           <a routerLink="/orders" class="view-orders-link">View My Orders</a>
         </div>
       </div>
     </div>
+
+    @if (showInvoiceModal) {
+      <app-invoice-modal [order]="orderDetails" (close)="showInvoiceModal = false"></app-invoice-modal>
+    }
   `,
   styles: [`
     .confirmation-page {
@@ -149,6 +165,26 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
       flex-direction: column;
       align-items: center;
       gap: 14px;
+      .btn-invoice {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #F1F5F9;
+        color: #0F172A;
+        border: 1.5px solid #CBD5E1;
+        padding: 12px 0;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        &:hover {
+          background: #E2E8F0;
+          border-color: #94A3B8;
+        }
+      }
       .continue-btn {
         width: 100%;
         padding: 14px 0;
@@ -189,19 +225,62 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
     }
   `]
 })
-export class OrderConfirmationComponent {
+export class OrderConfirmationComponent implements OnInit {
   route = inject(ActivatedRoute);
+  shopService = inject(ShopService);
 
   orderNumber = 'SC123456';
   orderDate = '12 May 2026';
   totalAmount = 5697;
+  orderDetails: any = null;
+  showInvoiceModal = false;
 
-  constructor() {
+  ngOnInit() {
     this.route.queryParams.subscribe(params => {
-      if (params['orderId']) this.orderNumber = params['orderId'];
+      if (params['orderId']) {
+        this.orderNumber = params['orderId'];
+        this.fetchOrderDetails(this.orderNumber);
+      }
       if (params['date']) this.orderDate = params['date'];
       if (params['amount']) this.totalAmount = Number(params['amount']);
     });
+  }
+
+  fetchOrderDetails(orderNum: string) {
+    this.shopService.getOrderByNumber(orderNum).subscribe({
+      next: (order) => {
+        this.orderDetails = order;
+      },
+      error: () => {
+        // Fallback default structure
+        this.orderDetails = {
+          orderNumber: this.orderNumber,
+          createdAtUtc: new Date(),
+          totalAmount: this.totalAmount,
+          subTotal: this.totalAmount,
+          shippingFee: 0,
+          discountAmount: 0,
+          shippingName: 'Customer',
+          items: []
+        };
+      }
+    });
+  }
+
+  openInvoice() {
+    if (!this.orderDetails) {
+      this.orderDetails = {
+        orderNumber: this.orderNumber,
+        createdAtUtc: new Date(),
+        totalAmount: this.totalAmount,
+        subTotal: this.totalAmount,
+        shippingFee: 0,
+        discountAmount: 0,
+        shippingName: 'Customer',
+        items: []
+      };
+    }
+    this.showInvoiceModal = true;
   }
 }
 

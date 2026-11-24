@@ -295,6 +295,19 @@ export class AdminOrdersComponent implements OnInit {
 
   orders: OrderRow[] = [];
 
+  private formatStatus(status: any): string {
+    if (typeof status === 'number') {
+      const map = ['Pending Payment', 'Payment Failed', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered', 'Cancellation Requested', 'Cancelled', 'Return Requested', 'Return Approved', 'Returned', 'Refund Pending', 'Refunded'];
+      return map[status] || 'Pending';
+    }
+    return status || 'Pending';
+  }
+
+  private formatPaymentMethod(method: any): string {
+    if (method === 1 || method === 'CashOnDelivery') return 'COD';
+    return 'Razorpay';
+  }
+
   ngOnInit() {
     this.shopService.getOrders().subscribe({
       next: (res: any[]) => {
@@ -308,8 +321,8 @@ export class AdminOrdersComponent implements OnInit {
             city: o.shippingCity || o.shippingAddress?.city || 'Bangalore',
             itemsCount: o.items?.length || 1,
             totalAmount: o.totalAmount,
-            paymentMethod: o.paymentMethod || 'Razorpay',
-            status: o.status || 'Confirmed'
+            paymentMethod: this.formatPaymentMethod(o.paymentMethod),
+            status: this.formatStatus(o.status)
           }));
         } else {
           this.orders = [];
@@ -322,7 +335,9 @@ export class AdminOrdersComponent implements OnInit {
   }
 
   totalRevenue(): number {
-    return this.orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    return this.orders
+      .filter(o => o.status !== 'Pending Payment' && o.status !== 'Payment Failed' && o.status !== 'Cancelled')
+      .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
   }
 
   filteredOrders(): OrderRow[] {

@@ -17,7 +17,8 @@ export class ShopService {
   // Computed cart metrics
   cartCount = computed(() => this.cartItems().reduce((acc, item) => acc + item.quantity, 0));
   cartSubtotal = computed(() => this.cartItems().reduce((acc, item) => acc + item.price * item.quantity, 0));
-  cartDiscount = signal<number>(300); // Default promo applied
+  cartDiscount = signal<number>(0);
+  appliedCouponCode = signal<string>('');
   shippingFee = computed(() => this.cartSubtotal() > 999 || this.cartSubtotal() === 0 ? 0 : 99);
   cartTotal = computed(() => Math.max(0, this.cartSubtotal() - this.cartDiscount() + this.shippingFee()));
 
@@ -150,6 +151,14 @@ export class ShopService {
     return this.http.put<any>(`${this.apiUrl}/orders/${id}/fulfillment`, payload);
   }
 
+  getOrderById(id: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/orders/${id}`);
+  }
+
+  getOrderByNumber(orderNumber: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/orders/number/${orderNumber}`);
+  }
+
   createOrder(payload: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/orders`, payload);
   }
@@ -219,5 +228,23 @@ export class ShopService {
 
   isWishlisted(productId: string): boolean {
     return this.wishlistIds().includes(productId);
+  }
+
+  getCoupons(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/coupons`);
+  }
+
+  validateCoupon(code: string, cartTotal: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/coupons/validate/${code}?cartTotal=${cartTotal}`);
+  }
+
+  applyCoupon(code: string, discount: number) {
+    this.appliedCouponCode.set(code);
+    this.cartDiscount.set(discount);
+  }
+
+  removeCoupon() {
+    this.appliedCouponCode.set('');
+    this.cartDiscount.set(0);
   }
 }

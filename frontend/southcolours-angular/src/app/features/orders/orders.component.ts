@@ -1,11 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { ShopService } from '../../core/services/shop.service';
+import { InvoiceModalComponent } from '../../shared/components/invoice-modal.component';
 
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, InvoiceModalComponent],
   template: `
     <div class="container account-page">
       <div class="account-layout">
@@ -62,75 +64,73 @@ import { RouterModule } from '@angular/router';
           </div>
 
           <div class="orders-cards-list">
-            <!-- Order 1 (#SC123456 - Delivered) -->
-            <div class="order-card">
-              <div class="order-topbar">
-                <div class="meta-group">
-                  <span class="order-id">Order #SC123456</span>
-                  <span class="order-date">12 May 2026</span>
-                </div>
-                <span class="badge-status delivered">Delivered</span>
-              </div>
-
-              <div class="order-items-sublist">
-                <div class="order-item-row">
-                  <img src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80" alt="Pink Lehenga Set" class="item-thumb" />
-                  <div class="item-info">
-                    <h4 class="item-title">Pink Lehenga Set (Size: 3-4Y)</h4>
+            @for (order of filteredOrders(); track order.id || order.orderNumber) {
+              <div class="order-card">
+                <div class="order-topbar">
+                  <div class="meta-group">
+                    <span class="order-id">Order #{{ order.orderNumber }}</span>
+                    <span class="order-date">{{ formatDate(order.createdAtUtc) }}</span>
                   </div>
-                  <span class="item-amt">₹ 2,499</span>
+                  <span class="badge-status" [ngClass]="getStatusClass(order.status)">
+                    {{ getStatusText(order.status) }}
+                  </span>
                 </div>
 
-                <div class="order-item-row">
-                  <img src="https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?auto=format&fit=crop&w=400&q=80" alt="Yellow Anarkali" class="item-thumb" />
-                  <div class="item-info">
-                    <h4 class="item-title">Yellow Anarkali (Size: 2-3Y)</h4>
+                <div class="order-items-sublist">
+                  @for (item of order.items; track item.id || item.productName) {
+                    <div class="order-item-row">
+                      <img [src]="item.imageUrl || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80'" [alt]="item.productName" class="item-thumb" />
+                      <div class="item-info">
+                        <h4 class="item-title">{{ item.productName }} (Size: {{ item.sizeName || 'Standard' }})</h4>
+                        <div class="item-subinfo">Qty: {{ item.quantity }} × ₹ {{ item.unitPrice | number }}</div>
+                      </div>
+                      <span class="item-amt">₹ {{ (item.unitPrice * item.quantity) | number }}</span>
+                    </div>
+                  } @empty {
+                    <div class="order-item-row">
+                      <div class="item-info">
+                        <h4 class="item-title">Fashion Apparel Order</h4>
+                      </div>
+                      <span class="item-amt">₹ {{ order.totalAmount | number }}</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="order-footer">
+                  <div class="total-group">
+                    <span class="label">Total</span>
+                    <span class="value">₹ {{ order.totalAmount | number }}</span>
                   </div>
-                  <span class="item-amt">₹ 1,899</span>
-                </div>
-              </div>
-
-              <div class="order-footer">
-                <div class="total-group">
-                  <span class="label">Total</span>
-                  <span class="value">₹ 4,398</span>
-                </div>
-                <button class="btn-secondary view-details-btn">View Details</button>
-              </div>
-            </div>
-
-            <!-- Order 2 (#SC123321 - Shipped) -->
-            <div class="order-card">
-              <div class="order-topbar">
-                <div class="meta-group">
-                  <span class="order-id">Order #SC123321</span>
-                  <span class="order-date">05 May 2026</span>
-                </div>
-                <span class="badge-status shipped">Shipped</span>
-              </div>
-
-              <div class="order-items-sublist">
-                <div class="order-item-row">
-                  <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=400&q=80" alt="Boy's Kurta Set" class="item-thumb" />
-                  <div class="item-info">
-                    <h4 class="item-title">Boy's Kurta Set (Size: 4-5Y)</h4>
+                  <div class="footer-actions">
+                    <button class="btn-invoice-outline" (click)="viewInvoice(order)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                      </svg>
+                      Invoice
+                    </button>
+                    <button class="btn-secondary view-details-btn" (click)="viewInvoice(order)">View Details</button>
                   </div>
-                  <span class="item-amt">₹ 1,599</span>
                 </div>
               </div>
-
-              <div class="order-footer">
-                <div class="total-group">
-                  <span class="label">Total</span>
-                  <span class="value">₹ 1,599</span>
-                </div>
-                <button class="btn-secondary view-details-btn">View Details</button>
+            } @empty {
+              <div class="empty-orders-card">
+                <span class="empty-icon">📦</span>
+                <h3>No orders found</h3>
+                <p>Looks like you haven't placed any orders in this category yet.</p>
+                <a routerLink="/products" class="btn-primary start-shopping-btn">Explore Collections</a>
               </div>
-            </div>
+            }
           </div>
         </main>
       </div>
     </div>
+
+    @if (selectedInvoiceOrder) {
+      <app-invoice-modal [order]="selectedInvoiceOrder" (close)="selectedInvoiceOrder = null"></app-invoice-modal>
+    }
   `,
   styles: [`
     .account-page {
@@ -306,9 +306,58 @@ import { RouterModule } from '@angular/router';
           color: var(--dark-navy);
         }
       }
+      .footer-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .btn-invoice-outline {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: transparent;
+        border: 1px solid #CBD5E1;
+        color: #334155;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        &:hover {
+          background: #F1F5F9;
+          border-color: #94A3B8;
+        }
+      }
       .view-details-btn {
         padding: 6px 18px;
         font-size: 13px;
+      }
+    }
+
+    .empty-orders-card {
+      text-align: center;
+      padding: 48px 20px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-pink);
+      border-radius: var(--radius-md);
+      .empty-icon {
+        font-size: 40px;
+        display: block;
+        margin-bottom: 12px;
+      }
+      h3 {
+        color: var(--dark-navy);
+        margin-bottom: 6px;
+      }
+      p {
+        color: var(--text-muted);
+        font-size: 14px;
+        margin-bottom: 18px;
+      }
+      .start-shopping-btn {
+        display: inline-block;
+        padding: 10px 24px;
       }
     }
 
@@ -362,7 +411,56 @@ import { RouterModule } from '@angular/router';
     }
   `]
 })
-export class OrdersComponent {
+export class OrdersComponent implements OnInit {
+  shopService = inject(ShopService);
   selectedTab = 'All';
+  orders: any[] = [];
+  selectedInvoiceOrder: any = null;
+
+  ngOnInit() {
+    this.shopService.getOrders().subscribe({
+      next: (data: any[]) => {
+        if (data && data.length > 0) {
+          this.orders = data;
+        } else {
+          this.orders = [];
+        }
+      },
+      error: () => {
+        this.orders = [];
+      }
+    });
+  }
+
+  formatDate(dateVal: any): string {
+    if (!dateVal) return new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    return new Date(dateVal).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  getStatusText(status: any): string {
+    if (typeof status === 'number') {
+      const map = ['Pending Payment', 'Payment Failed', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered', 'Cancellation Requested', 'Cancelled', 'Return Requested', 'Return Approved', 'Returned', 'Refund Pending', 'Refunded'];
+      return map[status] || 'Pending';
+    }
+    return status || 'Pending';
+  }
+
+  getStatusClass(status: any): string {
+    const text = this.getStatusText(status).toLowerCase();
+    if (text.includes('delivered')) return 'delivered';
+    if (text.includes('shipped')) return 'shipped';
+    if (text.includes('processing')) return 'processing';
+    if (text.includes('cancelled')) return 'cancelled';
+    return 'confirmed';
+  }
+
+  filteredOrders(): any[] {
+    if (this.selectedTab === 'All') return this.orders;
+    return this.orders.filter(o => this.getStatusText(o.status).toLowerCase().includes(this.selectedTab.toLowerCase()));
+  }
+
+  viewInvoice(order: any) {
+    this.selectedInvoiceOrder = order;
+  }
 }
 
