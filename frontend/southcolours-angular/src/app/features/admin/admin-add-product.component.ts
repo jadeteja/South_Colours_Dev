@@ -85,9 +85,25 @@ import { Category, SubCategory } from '../../core/models/ecommerce.models';
               </div>
             </div>
 
-            <!-- Size Options Checkboxes Matching Screen 8 -->
+            <!-- Size Options & Pricing per Size -->
             <div class="form-group">
-              <label>Size Options</label>
+              <div class="size-header-row">
+                <div>
+                  <label class="mb-0">Size Options & Custom Pricing</label>
+                  <p class="field-hint">Select sizes available for this product. You can set individual prices or leave empty to use default price (₹{{ price }}).</p>
+                </div>
+                <div class="add-custom-size-box">
+                  <input 
+                    type="text" 
+                    [(ngModel)]="newCustomSize" 
+                    [ngModelOptions]="{standalone: true}" 
+                    placeholder="e.g. 7-8Y, XXL, Free" 
+                    class="form-control form-control-sm"
+                    (keyup.enter)="addCustomSize()" />
+                  <button type="button" class="btn-add-size" (click)="addCustomSize()">+ Add Size</button>
+                </div>
+              </div>
+
               <div class="sizes-checkbox-row">
                 @for (size of availableSizes; track size) {
                   <label class="size-check">
@@ -100,6 +116,53 @@ import { Category, SubCategory } from '../../core/models/ecommerce.models';
                   </label>
                 }
               </div>
+
+              <!-- Configured Sizes Pricing Table -->
+              @if (selectedSizes.length > 0) {
+                <div class="size-variants-table-wrapper">
+                  <table class="size-variants-table">
+                    <thead>
+                      <tr>
+                        <th>Size</th>
+                        <th>Price (₹) <span class="th-hint">(Leave blank for ₹{{ price }})</span></th>
+                        <th>Stock Qty <span class="th-hint">(Optional)</span></th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (s of selectedSizes; track s) {
+                        <tr>
+                          <td class="size-name-col">
+                            <span class="size-badge">{{ s }}</span>
+                          </td>
+                          <td>
+                            <div class="input-with-symbol">
+                              <span class="currency-symbol">₹</span>
+                              <input 
+                                type="number" 
+                                [(ngModel)]="sizePriceMap[s]" 
+                                [ngModelOptions]="{standalone: true}" 
+                                [placeholder]="price.toString()" 
+                                class="form-control table-input" />
+                            </div>
+                          </td>
+                          <td>
+                            <input 
+                              type="number" 
+                              [(ngModel)]="sizeStockMap[s]" 
+                              [ngModelOptions]="{standalone: true}" 
+                              [placeholder]="stockQty.toString()" 
+                              class="form-control table-input" />
+                          </td>
+                          <td>
+                            <button type="button" class="btn-remove-size" (click)="toggleSize(s)" title="Remove size">✕</button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
             </div>
 
             <!-- Product Images Grid with Dynamic Upload & Delete -->
@@ -238,6 +301,120 @@ import { Category, SubCategory } from '../../core/models/ecommerce.models';
         }
       }
     }
+    .size-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+      .field-hint {
+        font-size: 12px;
+        color: #64748B;
+        margin: 2px 0 0;
+      }
+    }
+    .add-custom-size-box {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      .form-control-sm {
+        padding: 6px 10px;
+        font-size: 12px;
+        width: 150px;
+      }
+      .btn-add-size {
+        background: #FFF0F5;
+        border: 1px solid #FFD6E7;
+        color: #FF4081;
+        font-weight: 700;
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        &:hover {
+          background: #FF4081;
+          color: #FFFFFF;
+        }
+      }
+    }
+    .size-variants-table-wrapper {
+      margin-top: 12px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      overflow-x: auto;
+      background: #FAFAFA;
+    }
+    .size-variants-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      thead th {
+        background: #F1F5F9;
+        color: #334155;
+        font-weight: 700;
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid #E2E8F0;
+        .th-hint {
+          font-weight: normal;
+          color: #64748B;
+          font-size: 11px;
+        }
+      }
+      tbody td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #E2E8F0;
+        vertical-align: middle;
+      }
+      .size-name-col {
+        font-weight: 700;
+        width: 120px;
+      }
+      .size-badge {
+        display: inline-block;
+        background: #FFF0F5;
+        color: #FF4081;
+        border: 1px solid #FFD6E7;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .input-with-symbol {
+        position: relative;
+        display: flex;
+        align-items: center;
+        .currency-symbol {
+          position: absolute;
+          left: 10px;
+          color: #64748B;
+          font-weight: 700;
+          font-size: 12px;
+        }
+        .table-input {
+          padding-left: 24px;
+        }
+      }
+      .table-input {
+        padding: 6px 10px;
+        font-size: 13px;
+        max-width: 160px;
+      }
+      .btn-remove-size {
+        background: none;
+        border: none;
+        color: #94A3B8;
+        cursor: pointer;
+        font-size: 14px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        &:hover {
+          color: #EF4444;
+          background: #FEE2E2;
+        }
+      }
+    }
     .image-uploader-grid {
       display: flex;
       gap: 16px;
@@ -352,6 +529,9 @@ export class AdminAddProductComponent implements OnInit {
 
   availableSizes = ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'];
   selectedSizes = ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'];
+  newCustomSize = '';
+  sizePriceMap: { [size: string]: number | null } = {};
+  sizeStockMap: { [size: string]: number | null } = {};
 
   images: string[] = [];
 
@@ -481,7 +661,23 @@ export class AdminAddProductComponent implements OnInit {
       this.selectedSizes = this.selectedSizes.filter(s => s !== size);
     } else {
       this.selectedSizes.push(size);
+      if (!this.sizePriceMap[size]) {
+        this.sizePriceMap[size] = null;
+      }
     }
+  }
+
+  addCustomSize() {
+    const s = this.newCustomSize.trim();
+    if (!s) return;
+    if (!this.availableSizes.includes(s)) {
+      this.availableSizes.push(s);
+    }
+    if (!this.selectedSizes.includes(s)) {
+      this.selectedSizes.push(s);
+    }
+    this.newCustomSize = '';
+    this.toastService.success(`Size "${s}" added to options!`);
   }
 
   onFilesSelected(event: Event) {
@@ -516,6 +712,16 @@ export class AdminAddProductComponent implements OnInit {
     this.isSaving = true;
     const selectedCatObj = this.categories.find(c => c.slug === this.category);
 
+    const sizeVariants = this.selectedSizes.map(size => {
+      const customPrice = this.sizePriceMap[size];
+      const customStock = this.sizeStockMap[size];
+      return {
+        size: size,
+        price: customPrice && customPrice > 0 ? Number(customPrice) : Number(this.price),
+        stock: customStock && customStock > 0 ? Number(customStock) : (Number(this.stockQty) || 25)
+      };
+    });
+
     const payload = {
       name: this.productName.trim(),
       description: this.description.trim() || this.productName.trim(),
@@ -527,6 +733,7 @@ export class AdminAddProductComponent implements OnInit {
       sku: this.sku,
       stockQuantity: Number(this.stockQty),
       sizes: this.selectedSizes.length > 0 ? this.selectedSizes : ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'],
+      sizeVariants: sizeVariants,
       imageUrls: this.images
     };
 

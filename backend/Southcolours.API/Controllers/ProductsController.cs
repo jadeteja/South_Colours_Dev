@@ -180,18 +180,36 @@ public class ProductsController : ControllerBase
             });
         }
 
-        // Add variant sizes
-        var sizes = dto.Sizes != null && dto.Sizes.Count > 0 ? dto.Sizes : new List<string> { "2-3Y", "3-4Y", "4-5Y" };
-        foreach (var size in sizes)
+        // Add variant sizes (supporting SizeVariantDto with custom price per size or legacy string sizes)
+        if (dto.SizeVariants != null && dto.SizeVariants.Count > 0)
         {
-            product.Variants.Add(new ProductVariant
+            foreach (var sv in dto.SizeVariants.Where(x => !string.IsNullOrWhiteSpace(x.Size)))
             {
-                SKU = $"{dto.SKU}-{size}",
-                SizeName = size,
-                ColorName = "Pink",
-                ColorHex = "#FF4081",
-                AvailableStock = dto.StockQuantity > 0 ? dto.StockQuantity : 25
-            });
+                product.Variants.Add(new ProductVariant
+                {
+                    SKU = $"{dto.SKU}-{sv.Size.Trim()}",
+                    SizeName = sv.Size.Trim(),
+                    ColorName = "Pink",
+                    ColorHex = "#FF4081",
+                    PriceOverride = sv.Price > 0 ? sv.Price : null,
+                    AvailableStock = sv.Stock.HasValue && sv.Stock.Value > 0 ? sv.Stock.Value : (dto.StockQuantity > 0 ? dto.StockQuantity : 25)
+                });
+            }
+        }
+        else
+        {
+            var sizes = dto.Sizes != null && dto.Sizes.Count > 0 ? dto.Sizes : new List<string> { "2-3Y", "3-4Y", "4-5Y" };
+            foreach (var size in sizes)
+            {
+                product.Variants.Add(new ProductVariant
+                {
+                    SKU = $"{dto.SKU}-{size}",
+                    SizeName = size,
+                    ColorName = "Pink",
+                    ColorHex = "#FF4081",
+                    AvailableStock = dto.StockQuantity > 0 ? dto.StockQuantity : 25
+                });
+            }
         }
 
         _db.Products.Add(product);
@@ -269,6 +287,12 @@ public class ProductsController : ControllerBase
     }
 }
 
+public record SizeVariantDto(
+    string Size,
+    decimal? Price,
+    int? Stock
+);
+
 public record CreateProductDto(
     string Name,
     string Description,
@@ -279,6 +303,7 @@ public record CreateProductDto(
     string SKU,
     int StockQuantity,
     List<string>? Sizes,
+    List<SizeVariantDto>? SizeVariants,
     List<string>? ImageUrls
 );
 

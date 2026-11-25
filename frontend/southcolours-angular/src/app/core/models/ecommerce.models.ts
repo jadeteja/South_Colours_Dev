@@ -35,6 +35,12 @@ export interface ProductVariant {
   priceOverride?: number;
 }
 
+export interface SizeVariantInput {
+  size: string;
+  price?: number | null;
+  stock?: number | null;
+}
+
 export interface Product {
   id: string;
   name: string;

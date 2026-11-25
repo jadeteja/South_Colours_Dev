@@ -80,9 +80,9 @@ import { Product, ProductVariant } from '../../core/models/ecommerce.models';
             </div>
 
             <div class="price-box">
-              <span class="selling-price">₹ {{ product.sellingPrice | number }}</span>
-              <span class="original-price">₹ {{ product.originalPrice | number }}</span>
-              <span class="badge-discount">{{ getDiscountPercent(product.originalPrice, product.sellingPrice) }}% OFF</span>
+              <span class="selling-price">₹ {{ currentPrice | number }}</span>
+              <span class="original-price">₹ {{ currentOriginalPrice | number }}</span>
+              <span class="badge-discount">{{ getDiscountPercent(currentOriginalPrice, currentPrice) }}% OFF</span>
             </div>
 
             <p class="product-short-desc">{{ product.shortDescription }}</p>
@@ -2197,6 +2197,27 @@ export class ProductDetailsComponent implements OnInit {
   showZoomModal = false;
   modalZoomLevel = 1.5;
 
+  get currentPrice(): number {
+    if (!this.product) return 0;
+    const variant = this.product.variants?.find(v => v.sizeName === this.selectedSize);
+    if (variant && variant.priceOverride && variant.priceOverride > 0) {
+      return variant.priceOverride;
+    }
+    return this.product.sellingPrice;
+  }
+
+  get currentOriginalPrice(): number {
+    if (!this.product) return 0;
+    const baseSelling = this.product.sellingPrice;
+    const baseOrig = this.product.originalPrice;
+    const curSelling = this.currentPrice;
+    if (baseSelling > 0 && curSelling !== baseSelling) {
+      const ratio = baseOrig > baseSelling ? baseOrig / baseSelling : 1.25;
+      return Math.round(curSelling * ratio);
+    }
+    return this.product.originalPrice;
+  }
+
   onImageMouseMove(event: MouseEvent) {
     const card = event.currentTarget as HTMLElement;
     if (!card) return;
@@ -2318,6 +2339,12 @@ export class ProductDetailsComponent implements OnInit {
       this.shopService.getProductBySlug(slug).subscribe({
         next: (p) => {
           this.product = p;
+          if (p.variants && p.variants.length > 0) {
+            this.availableSizes = p.variants.map(v => v.sizeName);
+            if (!this.availableSizes.includes(this.selectedSize)) {
+              this.selectedSize = this.availableSizes[0];
+            }
+          }
           this.selectedImage = p.images[0]?.imageUrl || '';
           this.loadReviews(p.id);
           window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -2425,6 +2452,8 @@ export class ProductDetailsComponent implements OnInit {
     if (!this.product) return;
     const variant = this.product.variants?.find(v => v.sizeName === this.selectedSize);
     const variantId = variant?.id || this.product.variants?.[0]?.id || this.product.id;
+    const priceToUse = this.currentPrice;
+    const originalPriceToUse = this.currentOriginalPrice;
 
     this.shopService.addToCart({
       productId: this.product.id,
@@ -2432,8 +2461,8 @@ export class ProductDetailsComponent implements OnInit {
       name: this.product.name,
       size: this.selectedSize,
       color: this.selectedColor,
-      price: this.product.sellingPrice,
-      originalPrice: this.product.originalPrice,
+      price: priceToUse,
+      originalPrice: originalPriceToUse,
       imageUrl: this.selectedImage,
       quantity: this.quantity
     });
@@ -2450,6 +2479,8 @@ export class ProductDetailsComponent implements OnInit {
     if (!this.product) return;
     const variant = this.product.variants?.find(v => v.sizeName === this.selectedSize);
     const variantId = variant?.id || this.product.variants?.[0]?.id || this.product.id;
+    const priceToUse = this.currentPrice;
+    const originalPriceToUse = this.currentOriginalPrice;
 
     this.shopService.addToCart({
       productId: this.product.id,
@@ -2457,8 +2488,8 @@ export class ProductDetailsComponent implements OnInit {
       name: this.product.name,
       size: this.selectedSize,
       color: this.selectedColor,
-      price: this.product.sellingPrice,
-      originalPrice: this.product.originalPrice,
+      price: priceToUse,
+      originalPrice: originalPriceToUse,
       imageUrl: this.selectedImage,
       quantity: this.quantity
     });
