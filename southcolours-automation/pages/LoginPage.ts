@@ -34,12 +34,26 @@ export class LoginPage extends BasePage {
   }
 
   async clickQuickAdminLogin(): Promise<void> {
-    await this.quickAdminChip.click();
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@southcolours.com';
+    const adminPass = process.env.ADMIN_PASSWORD || 'Admin@South123#';
+    if (await this.quickAdminChip.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await this.quickAdminChip.click();
+    } else {
+      await this.emailInput.fill(adminEmail);
+      await this.passwordInput.fill(adminPass);
+    }
     await this.submitBtn.click();
   }
 
   async clickQuickCustomerLogin(): Promise<void> {
-    await this.quickCustomerChip.click();
+    const custEmail = process.env.CUSTOMER_EMAIL || 'customer@southcolours.com';
+    const custPass = process.env.CUSTOMER_PASSWORD || 'Customer@123#';
+    if (await this.quickCustomerChip.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await this.quickCustomerChip.click();
+    } else {
+      await this.emailInput.fill(custEmail);
+      await this.passwordInput.fill(custPass);
+    }
     await this.submitBtn.click();
   }
 

@@ -25,7 +25,7 @@ export class CartPage extends BasePage {
     this.emptyCartState = page.locator('.empty-cart');
     this.startShoppingBtn = page.getByRole('link', { name: 'Start Shopping' });
     this.couponInput = page.getByPlaceholder(/coupon code/i);
-    this.applyCouponBtn = page.getByRole('button', { name: 'Apply' });
+    this.applyCouponBtn = page.locator('.apply-btn, button:has-text("Apply")').first();
     this.couponMessage = page.locator('.coupon-msg');
     this.subtotalText = page.locator('.price-line:has-text("Subtotal") span:last-child');
     this.totalText = page.locator('.total-line span:last-child, .total-val');

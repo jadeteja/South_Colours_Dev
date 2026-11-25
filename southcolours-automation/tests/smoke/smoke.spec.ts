@@ -3,7 +3,7 @@ import { test, expect } from '../../fixtures/testFixtures';
 test.describe('Smoke Suite - Core Site Availability & Health', () => {
   test('TC-SMK-01: Home page loads with valid brand elements', async ({ homePage, page }) => {
     await homePage.openHomePage();
-    await expect(page).toHaveTitle(/Southcolours/i);
+    await expect(page).toHaveTitle(/South\s*Colours/i);
     await expect(homePage.headerLogo).toBeVisible();
     await expect(homePage.heroSection).toBeVisible();
   });

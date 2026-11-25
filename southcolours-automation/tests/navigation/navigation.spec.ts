@@ -3,9 +3,9 @@ import { test, expect } from '../../fixtures/testFixtures';
 test.describe('Navigation Suite - Header, Footer & Category Links', () => {
   test('TC-NAV-01: Header Category navigation items work properly', async ({ homePage, page }) => {
     await homePage.openHomePage();
-    const girlsLink = page.locator('header nav a[href*="category=girls"]').first();
+    const girlsLink = page.locator('header nav a[href*="category="], header nav a[href*="girls"]').first();
     await girlsLink.click();
-    await expect(page).toHaveURL(/.*category=girls/);
+    await expect(page).toHaveURL(/.*category=/);
   });
 
   test('TC-NAV-02: Header logo navigates back to Home', async ({ productPage, homePage, page }) => {

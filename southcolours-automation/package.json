@@ -7,7 +7,7 @@
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:smoke": "playwright test tests/smoke",
-    "test:regression": "playwright test tests/regression tests/authentication tests/products tests/cart tests/checkout tests/navigation",
+    "test:regression": "playwright test tests/regression tests/authentication tests/products tests/cart tests/checkout tests/navigation tests/profile tests/wishlist tests/e2e",
     "test:chromium": "playwright test --project=chromium",
     "test:firefox": "playwright test --project=firefox",
     "test:webkit": "playwright test --project=webkit",

@@ -12,12 +12,12 @@ export class HomePage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.heroSection = page.locator('section.hero-section').first();
+    this.heroSection = page.locator('section.hero-section, .hero, .hero-content').first();
     this.heroShopNowBtn = page.getByRole('link', { name: /Shop Now/i }).first();
     this.heroTitle = page.locator('h1.hero-title, h1').first();
-    this.shippingRibbon = page.locator('.shipping-ribbon-badge, .shipping-badge-container').first();
-    this.categoryCards = page.locator('.category-card, .categories-section a');
-    this.featuredProductsSection = page.locator('.featured-products, .product-grid, .products-section').first();
+    this.shippingRibbon = page.locator('.shipping-ribbon-badge, .shipping-badge-container, .features-strip').first();
+    this.categoryCards = page.locator('.category-card, .categories-section a, .category-circle-item');
+    this.featuredProductsSection = page.locator('.featured-products, .product-grid, .products-section, .products-grid').first();
     this.productCards = page.locator('a[href^="/products/"]');
   }
 
