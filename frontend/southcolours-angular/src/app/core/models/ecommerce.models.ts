@@ -33,11 +33,13 @@ export interface ProductVariant {
   colorHex?: string;
   availableStock: number;
   priceOverride?: number;
+  originalPriceOverride?: number;
 }
 
 export interface SizeVariantInput {
   size: string;
   price?: number | null;
+  mrp?: number | null;
   stock?: number | null;
 }
 

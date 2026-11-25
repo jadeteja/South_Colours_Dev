@@ -2208,6 +2208,10 @@ export class ProductDetailsComponent implements OnInit {
 
   get currentOriginalPrice(): number {
     if (!this.product) return 0;
+    const variant = this.product.variants?.find(v => v.sizeName === this.selectedSize);
+    if (variant && variant.originalPriceOverride && variant.originalPriceOverride > 0) {
+      return variant.originalPriceOverride;
+    }
     const baseSelling = this.product.sellingPrice;
     const baseOrig = this.product.originalPrice;
     const curSelling = this.currentPrice;

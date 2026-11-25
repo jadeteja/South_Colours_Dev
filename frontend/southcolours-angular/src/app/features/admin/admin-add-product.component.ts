@@ -65,23 +65,12 @@ import { Category, SubCategory } from '../../core/models/ecommerce.models';
 
             <div class="form-row">
               <div class="form-group col">
-                <label>Price (₹) *</label>
-                <input type="number" [(ngModel)]="price" name="price" class="form-control" placeholder="2499" required />
-              </div>
-              <div class="form-group col">
-                <label>Discount Price (₹)</label>
-                <input type="number" [(ngModel)]="discountPrice" name="discountPrice" class="form-control" placeholder="1999" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group col">
                 <label>SKU</label>
                 <input type="text" [(ngModel)]="sku" name="sku" class="form-control" placeholder="SC00123" />
               </div>
               <div class="form-group col">
                 <label>Stock Quantity</label>
-                <input type="number" [(ngModel)]="stockQty" name="stockQty" class="form-control" placeholder="50" />
+                <input type="number" [(ngModel)]="stockQty" name="stockQty" class="form-control" placeholder="30" />
               </div>
             </div>
 
@@ -89,8 +78,8 @@ import { Category, SubCategory } from '../../core/models/ecommerce.models';
             <div class="form-group">
               <div class="size-header-row">
                 <div>
-                  <label class="mb-0">Size Options & Custom Pricing</label>
-                  <p class="field-hint">Select sizes available for this product. You can set individual prices or leave empty to use default price (₹{{ price }}).</p>
+                  <label class="mb-0">Size Options, MRP & Discounted Selling Price</label>
+                  <p class="field-hint">Select sizes available for this product and configure MRP, Discount Price (Selling Price), and Stock per size.</p>
                 </div>
                 <div class="add-custom-size-box">
                   <input 
@@ -117,14 +106,15 @@ import { Category, SubCategory } from '../../core/models/ecommerce.models';
                 }
               </div>
 
-              <!-- Configured Sizes Pricing Table -->
+              <!-- Configured Sizes Pricing Table with MRP and Discount Price -->
               @if (selectedSizes.length > 0) {
                 <div class="size-variants-table-wrapper">
                   <table class="size-variants-table">
                     <thead>
                       <tr>
                         <th>Size</th>
-                        <th>Price (₹) <span class="th-hint">(Leave blank for ₹{{ price }})</span></th>
+                        <th>MRP (₹) <span class="th-hint">(Original Price)</span></th>
+                        <th>Price (₹) <span class="th-hint">(After Discount)</span> *</th>
                         <th>Stock Qty <span class="th-hint">(Optional)</span></th>
                         <th>Action</th>
                       </tr>
@@ -140,10 +130,22 @@ import { Category, SubCategory } from '../../core/models/ecommerce.models';
                               <span class="currency-symbol">₹</span>
                               <input 
                                 type="number" 
+                                [(ngModel)]="sizeMrpMap[s]" 
+                                [ngModelOptions]="{standalone: true}" 
+                                placeholder="e.g. 2499" 
+                                class="form-control table-input" />
+                            </div>
+                          </td>
+                          <td>
+                            <div class="input-with-symbol">
+                              <span class="currency-symbol">₹</span>
+                              <input 
+                                type="number" 
                                 [(ngModel)]="sizePriceMap[s]" 
                                 [ngModelOptions]="{standalone: true}" 
-                                [placeholder]="price.toString()" 
-                                class="form-control table-input" />
+                                placeholder="e.g. 1999" 
+                                class="form-control table-input" 
+                                required />
                             </div>
                           </td>
                           <td>
@@ -530,6 +532,7 @@ export class AdminAddProductComponent implements OnInit {
   availableSizes = ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'];
   selectedSizes = ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'];
   newCustomSize = '';
+  sizeMrpMap: { [size: string]: number | null } = {};
   sizePriceMap: { [size: string]: number | null } = {};
   sizeStockMap: { [size: string]: number | null } = {};
 
@@ -709,18 +712,40 @@ export class AdminAddProductComponent implements OnInit {
       return;
     }
 
+    if (this.selectedSizes.length === 0) {
+      this.toastService.error('Please select at least one size');
+      return;
+    }
+
+    // Verify each selected size has a selling price
+    for (const size of this.selectedSizes) {
+      const sp = this.sizePriceMap[size];
+      if (!sp || sp <= 0) {
+        this.toastService.error(`Please enter the discounted price for size ${size}`);
+        return;
+      }
+    }
+
     this.isSaving = true;
     const selectedCatObj = this.categories.find(c => c.slug === this.category);
 
     const sizeVariants = this.selectedSizes.map(size => {
       const customPrice = this.sizePriceMap[size];
+      const customMrp = this.sizeMrpMap[size];
       const customStock = this.sizeStockMap[size];
+      const selling = customPrice && customPrice > 0 ? Number(customPrice) : 0;
+      const mrp = customMrp && customMrp > 0 ? Number(customMrp) : selling;
       return {
         size: size,
-        price: customPrice && customPrice > 0 ? Number(customPrice) : Number(this.price),
+        price: selling,
+        mrp: mrp,
         stock: customStock && customStock > 0 ? Number(customStock) : (Number(this.stockQty) || 25)
       };
     });
+
+    const firstVariant = sizeVariants[0];
+    const topPrice = firstVariant ? firstVariant.price : 1999;
+    const topMrp = firstVariant ? firstVariant.mrp : 2499;
 
     const payload = {
       name: this.productName.trim(),
@@ -728,11 +753,11 @@ export class AdminAddProductComponent implements OnInit {
       categorySlug: this.category,
       categoryId: selectedCatObj?.id,
       subCategorySlug: this.subCategory || null,
-      price: Number(this.price),
-      discountPrice: Number(this.discountPrice),
+      price: topPrice,
+      discountPrice: topMrp,
       sku: this.sku,
       stockQuantity: Number(this.stockQty),
-      sizes: this.selectedSizes.length > 0 ? this.selectedSizes : ['1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-8Y'],
+      sizes: this.selectedSizes,
       sizeVariants: sizeVariants,
       imageUrls: this.images
     };

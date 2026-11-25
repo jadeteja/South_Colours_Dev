@@ -141,6 +141,20 @@ public class ProductsController : ControllerBase
             slug = $"{baseSlug}-{count++}";
         }
 
+        // Determine default selling price and MRP from size variants or fallback
+        decimal defaultSellingPrice = dto.Price;
+        decimal defaultMrp = dto.DiscountPrice > 0 ? dto.DiscountPrice : dto.Price;
+
+        if (dto.SizeVariants != null && dto.SizeVariants.Count > 0)
+        {
+            var firstValid = dto.SizeVariants.FirstOrDefault(x => x.Price.HasValue && x.Price.Value > 0);
+            if (firstValid != null && firstValid.Price.HasValue)
+            {
+                defaultSellingPrice = firstValid.Price.Value;
+                defaultMrp = firstValid.Mrp.HasValue && firstValid.Mrp.Value > 0 ? firstValid.Mrp.Value : defaultSellingPrice;
+            }
+        }
+
         var product = new Product
         {
             Name = dto.Name,
@@ -150,8 +164,8 @@ public class ProductsController : ControllerBase
             DetailedDescription = dto.Description,
             CategoryId = category?.Id ?? (await _db.Categories.FirstAsync()).Id,
             SubCategoryId = subCategory?.Id,
-            SellingPrice = dto.Price,
-            OriginalPrice = dto.DiscountPrice > 0 ? dto.DiscountPrice : dto.Price,
+            SellingPrice = defaultSellingPrice,
+            OriginalPrice = defaultMrp,
             IsActive = true,
             IsFeatured = true,
             IsNewArrival = true
@@ -185,13 +199,17 @@ public class ProductsController : ControllerBase
         {
             foreach (var sv in dto.SizeVariants.Where(x => !string.IsNullOrWhiteSpace(x.Size)))
             {
+                var sellingPrice = sv.Price.HasValue && sv.Price.Value > 0 ? sv.Price.Value : defaultSellingPrice;
+                var mrpPrice = sv.Mrp.HasValue && sv.Mrp.Value > 0 ? sv.Mrp.Value : (sv.Price.HasValue && sv.Price.Value > 0 ? sv.Price.Value : defaultMrp);
+
                 product.Variants.Add(new ProductVariant
                 {
                     SKU = $"{dto.SKU}-{sv.Size.Trim()}",
                     SizeName = sv.Size.Trim(),
                     ColorName = "Pink",
                     ColorHex = "#FF4081",
-                    PriceOverride = sv.Price > 0 ? sv.Price : null,
+                    PriceOverride = sellingPrice,
+                    OriginalPriceOverride = mrpPrice,
                     AvailableStock = sv.Stock.HasValue && sv.Stock.Value > 0 ? sv.Stock.Value : (dto.StockQuantity > 0 ? dto.StockQuantity : 25)
                 });
             }
@@ -207,6 +225,8 @@ public class ProductsController : ControllerBase
                     SizeName = size,
                     ColorName = "Pink",
                     ColorHex = "#FF4081",
+                    PriceOverride = defaultSellingPrice,
+                    OriginalPriceOverride = defaultMrp,
                     AvailableStock = dto.StockQuantity > 0 ? dto.StockQuantity : 25
                 });
             }
@@ -290,6 +310,7 @@ public class ProductsController : ControllerBase
 public record SizeVariantDto(
     string Size,
     decimal? Price,
+    decimal? Mrp,
     int? Stock
 );
 
