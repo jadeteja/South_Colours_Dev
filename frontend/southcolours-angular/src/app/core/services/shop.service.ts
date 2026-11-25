@@ -14,16 +14,42 @@ export class ShopService {
   cartItems = signal<CartItemModel[]>([]);
   wishlistIds = signal<string[]>([]);
 
+  // Dynamic store shipping settings (signals)
+  freeShippingMin = signal<number>(999);
+  standardDeliveryFee = signal<number>(99);
+
   // Computed cart metrics
   cartCount = computed(() => this.cartItems().reduce((acc, item) => acc + item.quantity, 0));
   cartSubtotal = computed(() => this.cartItems().reduce((acc, item) => acc + item.price * item.quantity, 0));
   cartDiscount = signal<number>(0);
   appliedCouponCode = signal<string>('');
-  shippingFee = computed(() => this.cartSubtotal() > 999 || this.cartSubtotal() === 0 ? 0 : 99);
+  shippingFee = computed(() => {
+    const subtotal = this.cartSubtotal();
+    if (subtotal === 0) return 0;
+    const fee = this.standardDeliveryFee();
+    if (fee === 0) return 0;
+    const threshold = this.freeShippingMin();
+    return subtotal >= threshold ? 0 : fee;
+  });
   cartTotal = computed(() => Math.max(0, this.cartSubtotal() - this.cartDiscount() + this.shippingFee()));
 
   constructor(private http: HttpClient) {
     this.cartItems.set([]);
+    this.loadStoreSettings();
+  }
+
+  loadStoreSettings() {
+    this.getSettings().subscribe({
+      next: (s) => {
+        if (s) {
+          const fee = Number(s.standardDeliveryFee ?? s.StandardDeliveryFee ?? 99);
+          const min = Number(s.freeShippingMin ?? s.FreeShippingMin ?? 999);
+          this.standardDeliveryFee.set(isNaN(fee) ? 0 : fee);
+          this.freeShippingMin.set(isNaN(min) ? 0 : min);
+        }
+      },
+      error: () => { }
+    });
   }
 
   getBanners(): Observable<Banner[]> {
