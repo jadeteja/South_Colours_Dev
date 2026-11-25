@@ -14,9 +14,9 @@ export class ShopService {
   cartItems = signal<CartItemModel[]>([]);
   wishlistIds = signal<string[]>([]);
 
-  // Dynamic store shipping settings (signals)
-  freeShippingMin = signal<number>(999);
-  standardDeliveryFee = signal<number>(99);
+  // Dynamic store shipping settings (signals) - default to 0 to prevent charging shipping unless configured
+  freeShippingMin = signal<number>(0);
+  standardDeliveryFee = signal<number>(0);
 
   // Computed cart metrics
   cartCount = computed(() => this.cartItems().reduce((acc, item) => acc + item.quantity, 0));
