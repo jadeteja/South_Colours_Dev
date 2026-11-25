@@ -725,6 +725,15 @@ import { Product, Category } from '../../core/models/ecommerce.models';
           display: inline-block;
         }
       }
+      .user-dropdown {
+        position: fixed;
+        top: 64px;
+        right: 12px;
+        left: auto;
+        width: 270px;
+        max-width: calc(100vw - 24px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(255, 64, 129, 0.15);
+      }
     }
   `]
 })
