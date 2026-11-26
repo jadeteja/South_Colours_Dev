@@ -12,6 +12,7 @@ import { RegisterComponent } from './features/auth/register.component';
 import { ForgotPasswordComponent } from './features/auth/forgot-password.component';
 import { ProfileComponent } from './features/profile/profile.component';
 import { AboutComponent } from './features/about/about.component';
+import { SizeChartComponent } from './features/size-chart/size-chart.component';
 import { PrivacyPolicyComponent } from './features/legal/privacy-policy.component';
 import { ReturnsRefundsComponent } from './features/legal/returns-refunds.component';
 import { TermsConditionsComponent } from './features/legal/terms-conditions.component';
@@ -43,6 +44,8 @@ export const routes: Routes = [
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: 'about', component: AboutComponent },
   { path: 'about-us', redirectTo: 'about', pathMatch: 'full' },
+  { path: 'size-chart', component: SizeChartComponent },
+  { path: 'size-guide', redirectTo: 'size-chart', pathMatch: 'full' },
   { path: 'contact', redirectTo: 'about', pathMatch: 'full' },
   { path: 'privacy', component: PrivacyPolicyComponent },
   { path: 'privacy-policy', redirectTo: 'privacy', pathMatch: 'full' },

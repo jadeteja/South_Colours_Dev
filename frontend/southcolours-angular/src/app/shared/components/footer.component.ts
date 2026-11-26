@@ -39,6 +39,7 @@ import { RouterModule } from '@angular/router';
           <h4>Customer Care</h4>
           <ul>
             <li><a routerLink="/about">About Us</a></li>
+            <li><a routerLink="/size-chart">Size Chart Guide</a></li>
             <li><a routerLink="/orders">Track Order</a></li>
             <li><a routerLink="/returns">Returns & Refunds</a></li>
             <li><a routerLink="/shipping">Shipping Policy</a></li>

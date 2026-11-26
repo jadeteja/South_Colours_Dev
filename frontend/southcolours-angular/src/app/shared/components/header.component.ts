@@ -208,6 +208,7 @@ import { Product, Category } from '../../core/models/ecommerce.models';
               </a>
             }
             <a routerLink="/products" [queryParams]="{ filter: 'new-arrivals' }" routerLinkActive="active" (click)="closeMobileMenu()">New Arrivals</a>
+            <a routerLink="/size-chart" routerLinkActive="active" (click)="closeMobileMenu()">Size Chart</a>
             <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()">About Us</a>
           </div>
         </div>
