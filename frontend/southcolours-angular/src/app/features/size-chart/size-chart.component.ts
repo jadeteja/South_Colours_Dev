@@ -28,7 +28,7 @@ import { Title, Meta } from '@angular/platform-browser';
                 <polyline points="12 5 19 12 12 19"></polyline>
               </svg>
             </a>
-            <a href="https://wa.me/919441113949" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+            <a href="https://wa.me/919398293994?text=Hello%20SouthColours%2C%20I%20need%20help%20with%20custom%20sizing%20for%20my%20child" target="_blank" rel="noopener noreferrer" class="btn-secondary">
               <span>Need Custom Size? WhatsApp Us</span>
             </a>
           </div>
