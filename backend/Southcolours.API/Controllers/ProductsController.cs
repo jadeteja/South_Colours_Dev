@@ -241,6 +241,7 @@ public class ProductsController : ControllerBase
     {
         var product = await _db.Products
             .Include(p => p.Images)
+            .Include(p => p.Variants)
             .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
 
         if (product == null) return NotFound(new { Message = "Product not found." });
@@ -248,9 +249,91 @@ public class ProductsController : ControllerBase
         product.Name = dto.Name;
         product.ShortDescription = dto.Description;
         product.DetailedDescription = dto.Description;
-        product.SellingPrice = dto.DiscountPrice > 0 ? dto.DiscountPrice : dto.Price;
-        product.OriginalPrice = dto.Price;
+        
+        if (!string.IsNullOrWhiteSpace(dto.CategorySlug))
+        {
+            var cat = await _db.Categories
+                .Include(c => c.SubCategories)
+                .FirstOrDefaultAsync(c => c.Slug.ToLower() == dto.CategorySlug.ToLower());
+            if (cat != null)
+            {
+                product.CategoryId = cat.Id;
+                if (!string.IsNullOrWhiteSpace(dto.SubCategorySlug))
+                {
+                    var sub = cat.SubCategories.FirstOrDefault(s => s.Slug.ToLower() == dto.SubCategorySlug.ToLower());
+                    product.SubCategoryId = sub?.Id;
+                }
+                else
+                {
+                    product.SubCategoryId = null;
+                }
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.SKU))
+        {
+            product.SKU = dto.SKU;
+        }
+
+        decimal defaultSellingPrice = dto.DiscountPrice > 0 ? dto.DiscountPrice : dto.Price;
+        decimal defaultMrp = dto.Price > 0 ? dto.Price : defaultSellingPrice;
+
+        if (dto.SizeVariants != null && dto.SizeVariants.Count > 0)
+        {
+            var firstValid = dto.SizeVariants.FirstOrDefault(x => x.Price.HasValue && x.Price.Value > 0);
+            if (firstValid != null && firstValid.Price.HasValue)
+            {
+                defaultSellingPrice = firstValid.Price.Value;
+                defaultMrp = firstValid.Mrp.HasValue && firstValid.Mrp.Value > 0 ? firstValid.Mrp.Value : defaultSellingPrice;
+            }
+        }
+
+        product.SellingPrice = defaultSellingPrice;
+        product.OriginalPrice = defaultMrp;
         product.UpdatedAtUtc = DateTime.UtcNow;
+
+        if (dto.SizeVariants != null)
+        {
+            var existingVariants = product.Variants.ToList();
+            var newSizeNames = dto.SizeVariants.Where(x => !string.IsNullOrWhiteSpace(x.Size)).Select(x => x.Size.Trim()).ToList();
+
+            // Remove variants no longer selected
+            foreach (var ev in existingVariants)
+            {
+                if (!newSizeNames.Contains(ev.SizeName, StringComparer.OrdinalIgnoreCase))
+                {
+                    _db.ProductVariants.Remove(ev);
+                }
+            }
+
+            // Update or add variants
+            foreach (var sv in dto.SizeVariants.Where(x => !string.IsNullOrWhiteSpace(x.Size)))
+            {
+                var sizeName = sv.Size.Trim();
+                var sellingPrice = sv.Price.HasValue && sv.Price.Value > 0 ? sv.Price.Value : defaultSellingPrice;
+                var existing = existingVariants.FirstOrDefault(v => string.Equals(v.SizeName, sizeName, StringComparison.OrdinalIgnoreCase));
+
+                if (existing != null)
+                {
+                    existing.PriceOverride = sellingPrice;
+                    existing.AvailableStock = sv.Stock.HasValue && sv.Stock.Value >= 0 ? sv.Stock.Value : existing.AvailableStock;
+                    existing.UpdatedAtUtc = DateTime.UtcNow;
+                }
+                else
+                {
+                    product.Variants.Add(new ProductVariant
+                    {
+                        ProductId = product.Id,
+                        SKU = $"{product.SKU}-{sizeName}",
+                        SizeName = sizeName,
+                        ColorName = "Pink",
+                        ColorHex = "#FF4081",
+                        PriceOverride = sellingPrice,
+                        AvailableStock = sv.Stock.HasValue && sv.Stock.Value > 0 ? sv.Stock.Value : 25
+                    });
+                }
+            }
+        }
 
         if (dto.ImageUrls != null)
         {
@@ -329,8 +412,12 @@ public record CreateProductDto(
 public record UpdateProductDto(
     string Name,
     string Description,
+    string? CategorySlug,
+    string? SubCategorySlug,
+    string? SKU,
     decimal Price,
     decimal DiscountPrice,
+    List<SizeVariantDto>? SizeVariants,
     List<string>? ImageUrls
 );
 
