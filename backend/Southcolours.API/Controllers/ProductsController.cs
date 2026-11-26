@@ -209,7 +209,6 @@ public class ProductsController : ControllerBase
                     ColorName = "Pink",
                     ColorHex = "#FF4081",
                     PriceOverride = sellingPrice,
-                    OriginalPriceOverride = mrpPrice,
                     AvailableStock = sv.Stock.HasValue && sv.Stock.Value > 0 ? sv.Stock.Value : (dto.StockQuantity > 0 ? dto.StockQuantity : 25)
                 });
             }
@@ -226,7 +225,6 @@ public class ProductsController : ControllerBase
                     ColorName = "Pink",
                     ColorHex = "#FF4081",
                     PriceOverride = defaultSellingPrice,
-                    OriginalPriceOverride = defaultMrp,
                     AvailableStock = dto.StockQuantity > 0 ? dto.StockQuantity : 25
                 });
             }

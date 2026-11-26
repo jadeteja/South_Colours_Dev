@@ -71,7 +71,6 @@ public class ProductVariant : BaseEntity
     public string? ColorHex { get; set; } // e.g. "#FF4081"
 
     public decimal? PriceOverride { get; set; }
-    public decimal? OriginalPriceOverride { get; set; } // MRP override per size
     public int AvailableStock { get; set; } = 0;
     public int ReservedStock { get; set; } = 0;
     public int LowStockThreshold { get; set; } = 5;
