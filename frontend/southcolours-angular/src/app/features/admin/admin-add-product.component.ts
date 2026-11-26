@@ -43,21 +43,31 @@ import { Category, SubCategory } from '../../core/models/ecommerce.models';
             <!-- Category & Sub Category matched directly from Categories page -->
             <div class="form-row">
               <div class="form-group col">
-                <label>Category *</label>
-                <select [(ngModel)]="category" name="category" (change)="onCategoryChange()" class="form-control">
+                <div class="label-with-link">
+                  <label>Category *</label>
+                  <a routerLink="/admin/categories" class="manage-cat-link">+ Manage Categories</a>
+                </div>
+                <select [(ngModel)]="category" name="category" (change)="onCategoryChange()" class="form-control" [disabled]="categories.length === 0">
                   @for (cat of categories; track cat.id || cat.slug) {
                     <option [value]="cat.slug">{{ cat.name }}</option>
+                  } @empty {
+                    <option value="">No categories created yet</option>
                   }
                 </select>
+                @if (categories.length === 0) {
+                  <p class="field-hint text-warning">
+                    ⚠️ You haven't created any categories yet. Please <a routerLink="/admin/categories">add a category</a> first.
+                  </p>
+                }
               </div>
 
               <div class="form-group col">
                 <label>Sub Category</label>
-                <select [(ngModel)]="subCategory" name="subCategory" class="form-control">
+                <select [(ngModel)]="subCategory" name="subCategory" class="form-control" [disabled]="availableSubCategories.length === 0">
                   @for (sub of availableSubCategories; track sub.id || sub.slug || sub.name) {
                     <option [value]="sub.slug || slugify(sub.name)">{{ sub.name }}</option>
                   } @empty {
-                    <option value="">General / All</option>
+                    <option value="">None / General</option>
                   }
                 </select>
               </div>
@@ -229,6 +239,24 @@ import { Category, SubCategory } from '../../core/models/ecommerce.models';
         font-weight: 700;
         color: #334155;
       }
+    }
+    .label-with-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      .manage-cat-link {
+        font-size: 11px;
+        color: #FF4081;
+        font-weight: 700;
+        text-decoration: none;
+        &:hover { text-decoration: underline; }
+      }
+    }
+    .text-warning {
+      color: #D97706;
+      font-size: 12px;
+      margin-top: 4px;
+      a { color: #FF4081; font-weight: 700; }
     }
     .form-row {
       display: flex;
@@ -517,8 +545,8 @@ export class AdminAddProductComponent implements OnInit {
 
   productName = '';
   description = '';
-  category = 'ethnic-wear';
-  subCategory = 'lehenga-choli';
+  category = '';
+  subCategory = '';
   price = 1999;
   discountPrice = 2499;
   sku = 'SC' + Math.floor(10000 + Math.random() * 90000);
@@ -545,15 +573,11 @@ export class AdminAddProductComponent implements OnInit {
   loadCategories() {
     this.shopService.getCategories().subscribe({
       next: (res) => {
-        if (res && res.length > 0) {
-          this.categories = res;
-        } else {
-          this.categories = this.getDefaultCategories();
-        }
+        this.categories = res || [];
         this.initCategorySelection();
       },
       error: () => {
-        this.categories = this.getDefaultCategories();
+        this.categories = [];
         this.initCategorySelection();
       }
     });
@@ -566,6 +590,10 @@ export class AdminAddProductComponent implements OnInit {
         this.category = this.categories[0].slug;
       }
       this.onCategoryChange();
+    } else {
+      this.category = '';
+      this.availableSubCategories = [];
+      this.subCategory = '';
     }
   }
 
@@ -577,73 +605,6 @@ export class AdminAddProductComponent implements OnInit {
     } else {
       this.subCategory = '';
     }
-  }
-
-  getDefaultCategories(): Category[] {
-    return [
-      {
-        id: 'cat-girls',
-        name: 'Girls',
-        slug: 'girls',
-        displayOrder: 1,
-        subCategories: []
-      },
-      {
-        id: 'cat-boys',
-        name: 'Boys',
-        slug: 'boys',
-        displayOrder: 2,
-        subCategories: []
-      },
-      {
-        id: 'cat-baby',
-        name: 'Baby Wear',
-        slug: 'baby-wear',
-        displayOrder: 3,
-        subCategories: []
-      },
-      {
-        id: 'cat-ethnic',
-        name: 'Ethnic Wear',
-        slug: 'ethnic-wear',
-        displayOrder: 4,
-        subCategories: [
-          { id: 'sub-ps', name: 'Pavadai Sattai', slug: 'pavadai-sattai', categoryId: 'cat-ethnic' },
-          { id: 'sub-gn', name: 'Gown', slug: 'gown', categoryId: 'cat-ethnic' },
-          { id: 'sub-lc', name: 'Lehenga Choli', slug: 'lehenga-choli', categoryId: 'cat-ethnic' },
-          { id: 'sub-ak', name: 'Anarkali', slug: 'anarkali', categoryId: 'cat-ethnic' },
-          { id: 'sub-ks', name: 'Kurta Sets', slug: 'kurta-sets', categoryId: 'cat-ethnic' }
-        ]
-      },
-      {
-        id: 'cat-dresses',
-        name: 'Dresses',
-        slug: 'dresses',
-        displayOrder: 5,
-        subCategories: []
-      },
-      {
-        id: 'cat-tops',
-        name: 'Tops',
-        slug: 'tops',
-        displayOrder: 6,
-        subCategories: []
-      },
-      {
-        id: 'cat-bottoms',
-        name: 'Bottoms',
-        slug: 'bottoms',
-        displayOrder: 7,
-        subCategories: []
-      },
-      {
-        id: 'cat-new',
-        name: 'New Arrivals',
-        slug: 'new-arrivals',
-        displayOrder: 8,
-        subCategories: []
-      }
-    ];
   }
 
   slugify(text: string): string {
@@ -709,6 +670,11 @@ export class AdminAddProductComponent implements OnInit {
     e.preventDefault();
     if (!this.productName.trim()) {
       this.toastService.error('Please enter a product name');
+      return;
+    }
+
+    if (!this.category) {
+      this.toastService.error('Please select or add a category first');
       return;
     }
 
